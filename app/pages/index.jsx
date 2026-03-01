@@ -74,6 +74,31 @@ const DEFAULT_OPTIONS = {
   }
 }
 
+function buildTocTree(items) {
+  const root = { level: 0, children: [] }
+  const stack = [root]
+
+  items.forEach((item) => {
+    const node = {
+      ...item,
+      children: []
+    }
+
+    while (
+      stack.length > 1 &&
+      node.level <= stack[stack.length - 1].level
+    ) {
+      stack.pop()
+    }
+
+    const parent = stack[stack.length - 1]
+    parent.children.push(node)
+    stack.push(node)
+  })
+
+  return root.children
+}
+
 export default class PreviewPage extends React.Component {
   constructor(props) {
     super(props)
@@ -82,6 +107,11 @@ export default class PreviewPage extends React.Component {
     this.timer = undefined
     this.bufnr = -1;
     this.tocCache = ''
+    this.headingObserver = null
+    this.headingElements = []
+    this.tocScrollFrame = null
+    this.tocAutoScrollFrame = null
+    this.tocNavRef = React.createRef()
 
     this.state = {
       name: '',
@@ -93,15 +123,24 @@ export default class PreviewPage extends React.Component {
       contentEditable: false,
       disableFilename: 1,
       tocItems: [],
-      tocVisible: true
+      tocTree: [],
+      expandedTocMap: {},
+      activeTocId: '',
+      isTocDrawerOpen: false
     }
     this.showThemeButton = this.showThemeButton.bind(this)
     this.hideThemeButton = this.hideThemeButton.bind(this)
     this.handleThemeChange = this.handleThemeChange.bind(this)
-    this.handleTocHide = this.handleTocHide.bind(this)
-    this.handleTocShow = this.handleTocShow.bind(this)
+    this.handleTocDrawerOpen = this.handleTocDrawerOpen.bind(this)
+    this.handleTocDrawerClose = this.handleTocDrawerClose.bind(this)
+    this.handleTocDrawerBackdrop = this.handleTocDrawerBackdrop.bind(this)
+    this.handleTocToggle = this.handleTocToggle.bind(this)
     this.handleTocJump = this.handleTocJump.bind(this)
     this.updateTocItems = this.updateTocItems.bind(this)
+    this.handleWindowKeydown = this.handleWindowKeydown.bind(this)
+    this.handleWindowScroll = this.handleWindowScroll.bind(this)
+    this.updateActiveHeadingByScroll = this.updateActiveHeadingByScroll.bind(this)
+    this.syncTocNavToActiveItem = this.syncTocNavToActiveItem.bind(this)
   }
 
   handleThemeChange() {
@@ -116,6 +155,46 @@ export default class PreviewPage extends React.Component {
 
   hideThemeButton() {
     this.setState({ themeModeIsVisible: false })
+  }
+
+  getExpandedTocMap(tocItems, previousMap = {}) {
+    const expandedTocMap = {}
+
+    tocItems.forEach((item) => {
+      if (Object.prototype.hasOwnProperty.call(previousMap, item.id)) {
+        expandedTocMap[item.id] = previousMap[item.id]
+      } else {
+        expandedTocMap[item.id] = item.level <= 2
+      }
+    })
+
+    return expandedTocMap
+  }
+
+  handleTocDrawerOpen() {
+    this.setState({ isTocDrawerOpen: true })
+  }
+
+  handleTocDrawerClose() {
+    this.setState({ isTocDrawerOpen: false })
+  }
+
+  handleTocDrawerBackdrop(event) {
+    if (event.target === event.currentTarget) {
+      this.handleTocDrawerClose()
+    }
+  }
+
+  handleTocToggle(event, id) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    this.setState((state) => ({
+      expandedTocMap: {
+        ...state.expandedTocMap,
+        [id]: !state.expandedTocMap[id]
+      }
+    }))
   }
 
   updateTocItems() {
@@ -150,27 +229,149 @@ export default class PreviewPage extends React.Component {
     const nextCache = tocItems
       .map(item => `${item.id}|${item.level}|${item.text}`)
       .join('\n')
-    if (nextCache !== this.tocCache) {
-      this.tocCache = nextCache
-      this.setState({ tocItems })
+
+    if (nextCache === this.tocCache) {
+      this.setupHeadingObserver()
+      return
     }
-  }
 
-  handleTocHide() {
-    this.setState({ tocVisible: false })
-  }
+    this.tocCache = nextCache
+    this.setState((state) => {
+      const tocTree = buildTocTree(tocItems)
+      const expandedTocMap = this.getExpandedTocMap(tocItems, state.expandedTocMap)
+      const activeTocId = tocItems.some((item) => item.id === state.activeTocId)
+        ? state.activeTocId
+        : (tocItems[0] && tocItems[0].id) || ''
 
-  handleTocShow() {
-    this.setState({ tocVisible: true })
+      return {
+        tocItems,
+        tocTree,
+        expandedTocMap,
+        activeTocId,
+        isTocDrawerOpen: tocItems.length > 0 ? state.isTocDrawerOpen : false
+      }
+    }, () => {
+      this.setupHeadingObserver()
+    })
   }
 
   handleTocJump(event, id) {
     event.preventDefault()
     const target = document.getElementById(id)
+    this.setState({ activeTocId: id, isTocDrawerOpen: false })
+
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' })
       window.history.replaceState(null, '', `#${id}`)
     }
+  }
+
+  handleWindowKeydown(event) {
+    if (event.key === 'Escape' && this.state.isTocDrawerOpen) {
+      this.handleTocDrawerClose()
+    }
+  }
+
+  handleWindowScroll() {
+    if (this.tocScrollFrame !== null) {
+      return
+    }
+
+    this.tocScrollFrame = window.requestAnimationFrame(() => {
+      this.tocScrollFrame = null
+      this.updateActiveHeadingByScroll()
+    })
+  }
+
+  setupHeadingObserver() {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    this.cleanupHeadingObserver()
+
+    this.headingElements = Array.from(
+      document.querySelectorAll('.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6')
+    )
+
+    if (this.headingElements.length === 0) {
+      if (this.state.activeTocId) {
+        this.setState({ activeTocId: '' })
+      }
+      return
+    }
+
+    if (typeof window !== 'undefined' && window.IntersectionObserver) {
+      this.headingObserver = new window.IntersectionObserver(
+        () => this.updateActiveHeadingByScroll(),
+        {
+          root: null,
+          threshold: [0, 1],
+          rootMargin: '-18% 0px -72% 0px'
+        }
+      )
+      this.headingElements.forEach((heading) => this.headingObserver.observe(heading))
+    }
+
+    this.updateActiveHeadingByScroll()
+  }
+
+  cleanupHeadingObserver() {
+    if (this.headingObserver) {
+      this.headingObserver.disconnect()
+      this.headingObserver = null
+    }
+    this.headingElements = []
+  }
+
+  updateActiveHeadingByScroll() {
+    if (typeof window === 'undefined' || this.headingElements.length === 0) {
+      return
+    }
+
+    const headingOffset = 128
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+    const currentPosition = scrollTop + headingOffset
+    let nextActiveId = this.headingElements[0].id
+
+    this.headingElements.forEach((heading) => {
+      if (heading.offsetTop <= currentPosition) {
+        nextActiveId = heading.id
+      }
+    })
+
+    if (nextActiveId && nextActiveId !== this.state.activeTocId) {
+      this.setState({ activeTocId: nextActiveId })
+    }
+  }
+
+  syncTocNavToActiveItem() {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const tocNav = this.tocNavRef && this.tocNavRef.current
+    if (!tocNav) {
+      return
+    }
+
+    const activeLink = tocNav.querySelector('.toc-item.is-active > .toc-item-row .toc-link')
+    if (!activeLink) {
+      return
+    }
+
+    const maxScrollTop = Math.max(tocNav.scrollHeight - tocNav.clientHeight, 0)
+    const targetCenter = activeLink.offsetTop + (activeLink.offsetHeight / 2)
+    const desiredScrollTop = Math.min(
+      Math.max(targetCenter - (tocNav.clientHeight / 2), 0),
+      maxScrollTop
+    )
+
+    if (Math.abs(tocNav.scrollTop - desiredScrollTop) < 2) {
+      return
+    }
+
+    tocNav.scrollTop = desiredScrollTop
   }
 
   startSocket(bufnr) {
@@ -211,6 +412,47 @@ export default class PreviewPage extends React.Component {
 
   componentDidMount() {
     this.startSocket(parseFloat(window.location.pathname.split('/')[2]))
+    window.addEventListener('keydown', this.handleWindowKeydown)
+    window.addEventListener('scroll', this.handleWindowScroll, { passive: true })
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const activeChanged = prevState.activeTocId !== this.state.activeTocId
+    const drawerOpened = !prevState.isTocDrawerOpen && this.state.isTocDrawerOpen
+
+    if (!activeChanged && !drawerOpened) {
+      return
+    }
+
+    if (this.tocAutoScrollFrame !== null) {
+      window.cancelAnimationFrame(this.tocAutoScrollFrame)
+    }
+
+    this.tocAutoScrollFrame = window.requestAnimationFrame(() => {
+      this.tocAutoScrollFrame = null
+      this.syncTocNavToActiveItem()
+    })
+  }
+
+  componentWillUnmount() {
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = undefined
+    }
+
+    if (this.tocScrollFrame !== null) {
+      window.cancelAnimationFrame(this.tocScrollFrame)
+      this.tocScrollFrame = null
+    }
+
+    if (this.tocAutoScrollFrame !== null) {
+      window.cancelAnimationFrame(this.tocAutoScrollFrame)
+      this.tocAutoScrollFrame = null
+    }
+
+    window.removeEventListener('keydown', this.handleWindowKeydown)
+    window.removeEventListener('scroll', this.handleWindowScroll)
+    this.cleanupHeadingObserver()
   }
 
   onConnect() {
@@ -379,6 +621,55 @@ export default class PreviewPage extends React.Component {
     }
   }
 
+  renderTocNodes(nodes, depth = 0) {
+    if (!nodes || nodes.length === 0) {
+      return null
+    }
+
+    const { activeTocId, expandedTocMap } = this.state
+
+    return (
+      <ul className={`toc-list ${depth === 0 ? 'toc-root-list' : 'toc-child-list'}`}>
+        {nodes.map((node) => {
+          const hasChildren = node.children && node.children.length > 0
+          const isExpanded = hasChildren ? expandedTocMap[node.id] !== false : false
+          const isActive = activeTocId === node.id
+
+          return (
+            <li
+              key={node.key}
+              className={`toc-item toc-level-${node.level}${hasChildren ? ' has-children' : ''}${isExpanded ? ' is-expanded' : ''}${isActive ? ' is-active' : ''}`}
+            >
+              <div className="toc-item-row">
+                {hasChildren ? (
+                  <button
+                    type="button"
+                    className="toc-collapse-btn"
+                    onClick={(event) => this.handleTocToggle(event, node.id)}
+                    aria-label={`${isExpanded ? '折叠' : '展开'} ${node.text}`}
+                    aria-expanded={isExpanded ? 'true' : 'false'}
+                  >
+                  </button>
+                ) : (
+                  <span className="toc-collapse-placeholder" aria-hidden="true"></span>
+                )}
+                <a
+                  className="toc-link"
+                  href={`#${node.id}`}
+                  onClick={(event) => this.handleTocJump(event, node.id)}
+                  title={node.text}
+                >
+                  {node.text}
+                </a>
+              </div>
+              {hasChildren && isExpanded ? this.renderTocNodes(node.children, depth + 1) : null}
+            </li>
+          )
+        })}
+      </ul>
+    )
+  }
+
   render() {
     const {
       theme,
@@ -389,8 +680,12 @@ export default class PreviewPage extends React.Component {
       contentEditable,
       disableFilename,
       tocItems,
-      tocVisible
+      tocTree,
+      isTocDrawerOpen
     } = this.state
+
+    const hasToc = tocItems.length > 0
+    const pageCtnClassName = disableFilename == 0 ? 'with-header' : 'header-hidden'
 
     return (
       <React.Fragment>
@@ -415,90 +710,105 @@ export default class PreviewPage extends React.Component {
           <script type="text/javascript" src="/_static/viz.js"></script>
           <script type="text/javascript" src="/_static/full.render.js"></script>
         </Head>
-        <main data-theme={this.state.theme}>
-          <div id="page-ctn" contentEditable={contentEditable ? 'true' : 'false'}>
-            { disableFilename == 0 &&
-              <header
-                id="page-header"
-                onMouseEnter={this.showThemeButton}
-                onMouseLeave={this.hideThemeButton}
-              >
-                <h3>
-                  <svg
-                    viewBox="0 0 16 16"
-                    version="1.1"
-                    width="16"
-                    height="16"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M3 5h4v1H3V5zm0 3h4V7H3v1zm0 2h4V9H3v1zm11-5h-4v1h4V5zm0 2h-4v1h4V7zm0 2h-4v1h4V9zm2-6v9c0 .55-.45 1-1 1H9.5l-1 1-1-1H2c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1h5.5l1 1 1-1H15c.55 0 1 .45 1 1zm-8 .5L7.5 3H2v9h6V3.5zm7-.5H9.5l-.5.5V12h6V3z"
-                    >
-                    </path>
-                  </svg>
-                  {name}
-                </h3>
-                {themeModeIsVisible && (
-                  <label id="toggle-theme" for="theme">
-                    <input
-                      id="theme"
-                      type="checkbox"
-                      checked={theme === "dark"}
-                      onChange={this.handleThemeChange}
-                    />
-                    <span>Dark Mode</span>
-                  </label>
-               )}
-              </header>
-            }
-            <section
-              className="markdown-body"
-              dangerouslySetInnerHTML={{
-                __html: content
-              }}
-            />
-          </div>
-          {tocItems.length > 0 && tocVisible && (
-            <aside id="toc-panel" aria-label="文章目录">
-              <header id="toc-header">
-                <strong>目录</strong>
+        <main
+          data-theme={this.state.theme}
+          className={isTocDrawerOpen ? 'toc-drawer-open' : ''}
+        >
+          <div id="page-shell" className={hasToc ? 'has-toc' : ''}>
+            {hasToc && (
+              <React.Fragment>
                 <button
-                  id="toc-hide-btn"
+                  id="toc-mobile-open-btn"
                   type="button"
-                  onClick={this.handleTocHide}
-                  aria-label="隐藏目录"
+                  onClick={this.handleTocDrawerOpen}
+                  aria-label="打开目录"
+                  aria-haspopup="dialog"
+                  aria-expanded={isTocDrawerOpen ? 'true' : 'false'}
+                  aria-controls="toc-panel"
                 >
-                  隐藏
+                  目录
                 </button>
-              </header>
-              <nav id="toc-nav">
-                <ul>
-                  {tocItems.map((item) => (
-                    <li key={item.key} className={`toc-level-${item.level}`}>
-                      <a
-                        href={`#${item.id}`}
-                        onClick={(event) => this.handleTocJump(event, item.id)}
-                        title={item.text}
+                <div
+                  id="toc-drawer-backdrop"
+                  className={isTocDrawerOpen ? 'is-open' : ''}
+                  onClick={this.handleTocDrawerBackdrop}
+                ></div>
+              </React.Fragment>
+            )}
+
+            {hasToc && (
+              <aside
+                id="toc-panel"
+                className={isTocDrawerOpen ? 'is-open' : ''}
+                aria-label="文章目录"
+              >
+                <header id="toc-header">
+                  <strong>目录</strong>
+                  <button
+                    id="toc-close-btn"
+                    type="button"
+                    onClick={this.handleTocDrawerClose}
+                    aria-label="关闭目录"
+                  >
+                    关闭
+                  </button>
+                </header>
+                <nav id="toc-nav" ref={this.tocNavRef}>
+                  {this.renderTocNodes(tocTree)}
+                </nav>
+              </aside>
+            )}
+
+            <div id="content-col">
+              <div
+                id="page-ctn"
+                className={pageCtnClassName}
+                contentEditable={contentEditable ? 'true' : 'false'}
+              >
+                {disableFilename == 0 &&
+                  <header
+                    id="page-header"
+                    onMouseEnter={this.showThemeButton}
+                    onMouseLeave={this.hideThemeButton}
+                  >
+                    <h3>
+                      <svg
+                        viewBox="0 0 16 16"
+                        version="1.1"
+                        width="16"
+                        height="16"
+                        aria-hidden="true"
                       >
-                        {item.text}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            </aside>
-          )}
-          {tocItems.length > 0 && !tocVisible && (
-            <button
-              id="toc-float-btn"
-              type="button"
-              onClick={this.handleTocShow}
-              aria-label="显示目录"
-            >
-              目录
-            </button>
-          )}
+                        <path
+                          fillRule="evenodd"
+                          d="M3 5h4v1H3V5zm0 3h4V7H3v1zm0 2h4V9H3v1zm11-5h-4v1h4V5zm0 2h-4v1h4V7zm0 2h-4v1h4V9zm2-6v9c0 .55-.45 1-1 1H9.5l-1 1-1-1H2c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1h5.5l1 1 1-1H15c.55 0 1 .45 1 1zm-8 .5L7.5 3H2v9h6V3.5zm7-.5H9.5l-.5.5V12h6V3z"
+                        >
+                        </path>
+                      </svg>
+                      {name}
+                    </h3>
+                    {themeModeIsVisible && (
+                      <label id="toggle-theme" htmlFor="theme">
+                        <input
+                          id="theme"
+                          type="checkbox"
+                          checked={theme === "dark"}
+                          onChange={this.handleThemeChange}
+                        />
+                        <span>Dark Mode</span>
+                      </label>
+                    )}
+                  </header>
+                }
+                <section
+                  className="markdown-body"
+                  dangerouslySetInnerHTML={{
+                    __html: content
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         </main>
       </React.Fragment>
     )
