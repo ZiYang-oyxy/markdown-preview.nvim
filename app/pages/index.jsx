@@ -81,6 +81,7 @@ export default class PreviewPage extends React.Component {
     this.preContent = ''
     this.timer = undefined
     this.bufnr = -1;
+    this.tocCache = ''
 
     this.state = {
       name: '',
@@ -90,11 +91,17 @@ export default class PreviewPage extends React.Component {
       theme: '',
       themeModeIsVisible: false,
       contentEditable: false,
-      disableFilename: 1
+      disableFilename: 1,
+      tocItems: [],
+      tocVisible: true
     }
     this.showThemeButton = this.showThemeButton.bind(this)
     this.hideThemeButton = this.hideThemeButton.bind(this)
     this.handleThemeChange = this.handleThemeChange.bind(this)
+    this.handleTocHide = this.handleTocHide.bind(this)
+    this.handleTocShow = this.handleTocShow.bind(this)
+    this.handleTocJump = this.handleTocJump.bind(this)
+    this.updateTocItems = this.updateTocItems.bind(this)
   }
 
   handleThemeChange() {
@@ -109,6 +116,61 @@ export default class PreviewPage extends React.Component {
 
   hideThemeButton() {
     this.setState({ themeModeIsVisible: false })
+  }
+
+  updateTocItems() {
+    if (typeof document === 'undefined') {
+      return []
+    }
+    const root = document.querySelector('.markdown-body')
+    if (!root) {
+      return
+    }
+
+    const tocItems = Array.from(root.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+      .map((heading, index) => {
+        // Fallback id for headings not processed by markdown-it-anchor
+        const id = heading.getAttribute('id') || `mkdp-toc-${index}`
+        if (!heading.getAttribute('id')) {
+          heading.setAttribute('id', id)
+        }
+        const text = (heading.textContent || '').trim()
+        if (!text) {
+          return null
+        }
+        return {
+          id,
+          text,
+          level: parseInt(heading.tagName.replace('H', ''), 10) || 1,
+          key: `${id}-${index}`
+        }
+      })
+      .filter(Boolean)
+
+    const nextCache = tocItems
+      .map(item => `${item.id}|${item.level}|${item.text}`)
+      .join('\n')
+    if (nextCache !== this.tocCache) {
+      this.tocCache = nextCache
+      this.setState({ tocItems })
+    }
+  }
+
+  handleTocHide() {
+    this.setState({ tocVisible: false })
+  }
+
+  handleTocShow() {
+    this.setState({ tocVisible: true })
+  }
+
+  handleTocJump(event, id) {
+    event.preventDefault()
+    const target = document.getElementById(id)
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      window.history.replaceState(null, '', `#${id}`)
+    }
   }
 
   startSocket(bufnr) {
@@ -295,6 +357,7 @@ export default class PreviewPage extends React.Component {
           renderDiagram()
           renderFlowchart()
           renderDot()
+          this.updateTocItems()
         }
         refreshScroll()
       })
@@ -325,6 +388,8 @@ export default class PreviewPage extends React.Component {
       themeModeIsVisible,
       contentEditable,
       disableFilename,
+      tocItems,
+      tocVisible
     } = this.state
 
     return (
@@ -394,6 +459,46 @@ export default class PreviewPage extends React.Component {
               }}
             />
           </div>
+          {tocItems.length > 0 && tocVisible && (
+            <aside id="toc-panel" aria-label="文章目录">
+              <header id="toc-header">
+                <strong>目录</strong>
+                <button
+                  id="toc-hide-btn"
+                  type="button"
+                  onClick={this.handleTocHide}
+                  aria-label="隐藏目录"
+                >
+                  隐藏
+                </button>
+              </header>
+              <nav id="toc-nav">
+                <ul>
+                  {tocItems.map((item) => (
+                    <li key={item.key} className={`toc-level-${item.level}`}>
+                      <a
+                        href={`#${item.id}`}
+                        onClick={(event) => this.handleTocJump(event, item.id)}
+                        title={item.text}
+                      >
+                        {item.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </aside>
+          )}
+          {tocItems.length > 0 && !tocVisible && (
+            <button
+              id="toc-float-btn"
+              type="button"
+              onClick={this.handleTocShow}
+              aria-label="显示目录"
+            >
+              目录
+            </button>
+          )}
         </main>
       </React.Fragment>
     )
