@@ -11,6 +11,11 @@ interface IApp {
     openBrowser: ((params: {
         bufnr: number | string;
     }) => void);
+    exportPreview: ((params: {
+        bufnr: number | string;
+        mode?: string;
+        outputPath?: string;
+    }) => void);
 }
 interface IPlugin {
     init: ((app: IApp) => void);

@@ -123,6 +123,8 @@ function! s:init_command() abort
   command! -buffer MarkdownPreview call mkdp#util#open_preview_page()
   command! -buffer MarkdownPreviewStop call mkdp#util#stop_preview()
   command! -buffer MarkdownPreviewToggle call mkdp#util#toggle_preview()
+  command! -buffer MarkdownPreviewExport call mkdp#util#export_preview_download()
+  command! -buffer -nargs=? -bang MarkdownPreviewExportFile call mkdp#util#export_preview_file(<q-args>, <bang>0)
   " mapping for user
   noremap <buffer> <silent> <Plug>MarkdownPreview :MarkdownPreview<CR>
   inoremap <buffer> <silent> <Plug>MarkdownPreview <Esc>:MarkdownPreview<CR>a
@@ -130,6 +132,17 @@ function! s:init_command() abort
   inoremap <buffer> <silent> <Plug>MarkdownPreviewStop <Esc>:MarkdownPreviewStop<CR>a
   nnoremap <buffer> <silent> <Plug>MarkdownPreviewToggle :MarkdownPreviewToggle<CR>
   inoremap <buffer> <silent> <Plug>MarkdownPreviewToggle <Esc>:MarkdownPreviewToggle<CR>
+  nnoremap <buffer> <silent> <Plug>MarkdownPreviewExport :MarkdownPreviewExport<CR>
+  inoremap <buffer> <silent> <Plug>MarkdownPreviewExport <Esc>:MarkdownPreviewExport<CR>a
+  nnoremap <buffer> <silent> <Plug>MarkdownPreviewExportFile :MarkdownPreviewExportFile<CR>
+  inoremap <buffer> <silent> <Plug>MarkdownPreviewExportFile <Esc>:MarkdownPreviewExportFile<CR>a
+
+  if empty(maparg('<leader>me', 'n'))
+    nmap <buffer> <silent> <leader>me <Plug>MarkdownPreviewExport
+  endif
+  if empty(maparg('<leader>me', 'i'))
+    imap <buffer> <silent> <leader>me <Plug>MarkdownPreviewExport
+  endif
 endfunction
 
 function! s:init() abort

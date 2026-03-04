@@ -127,6 +127,36 @@ main {
   vertical-align: middle;
 }
 
+.mkdp-header-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mkdp-export-btn {
+  height: 26px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface-color);
+  color: var(--foreground-color);
+  padding: 0 12px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+}
+
+.mkdp-export-btn:hover {
+  background: var(--secondary-background-color);
+}
+
+.mkdp-export-btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 #page-ctn .markdown-body {
   border-color: var(--border-color);
   box-shadow: var(--shadow-soft);
@@ -261,6 +291,11 @@ main {
 .toc-link:focus-visible,
 #toc-mobile-open-btn:focus-visible,
 #toc-close-btn:focus-visible {
+  outline: 2px solid var(--toc-accent);
+  outline-offset: 1px;
+}
+
+.mkdp-export-btn:focus-visible {
   outline: 2px solid var(--toc-accent);
   outline-offset: 1px;
 }
@@ -432,6 +467,12 @@ main {
   }
 
   #toggle-theme {
+    font-size: 11px;
+  }
+
+  .mkdp-export-btn {
+    height: 24px;
+    padding: 0 10px;
     font-size: 11px;
   }
 }

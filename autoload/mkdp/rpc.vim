@@ -135,6 +135,18 @@ function! mkdp#rpc#open_browser() abort
   endif
 endfunction
 
+function! mkdp#rpc#export_preview(payload) abort
+  if s:is_vim
+    if s:mkdp_channel_id !=# v:null
+      call mkdp#rpc#notify(s:mkdp_channel_id, 'export_preview', a:payload)
+    endif
+  else
+    if s:mkdp_channel_id !=# -1
+      call rpcnotify(s:mkdp_channel_id, 'export_preview', a:payload)
+    endif
+  endif
+endfunction
+
 function! mkdp#rpc#request(clientId, method, ...) abort
   let args = get(a:, 1, [])
   let res = ch_evalexpr(a:clientId, [a:method, args], {'timeout': 5000})
