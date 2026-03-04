@@ -1,6 +1,5 @@
 ;(function () {
   var EXPORT_BUTTON_ID = 'mkdp-export-btn'
-  var HEADER_ACTIONS_CLASS = 'mkdp-header-actions'
   var EXPORT_SHORTCUT_LABEL = 'Ctrl/Cmd+Shift+E'
   var EXPORT_TIMEOUT_MS = 60000
   var assetDataUrlCache = new Map()
@@ -398,19 +397,7 @@
       return
     }
 
-    var actions = header.querySelector('.' + HEADER_ACTIONS_CLASS)
-    if (!actions) {
-      actions = document.createElement('div')
-      actions.className = HEADER_ACTIONS_CLASS
-      header.appendChild(actions)
-    }
-
-    var themeToggle = header.querySelector('#toggle-theme')
-    if (themeToggle && themeToggle.parentNode !== actions) {
-      actions.insertBefore(themeToggle, actions.firstChild)
-    }
-
-    var button = actions.querySelector('#' + EXPORT_BUTTON_ID)
+    var button = header.querySelector('#' + EXPORT_BUTTON_ID)
     if (!button) {
       button = document.createElement('button')
       button.type = 'button'
@@ -421,7 +408,7 @@
       button.addEventListener('click', function () {
         runExport({ mode: 'download' })
       })
-      actions.appendChild(button)
+      header.appendChild(button)
     }
   }
 
