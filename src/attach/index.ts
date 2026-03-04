@@ -20,6 +20,13 @@ interface IApp {
       bufnr: number | string
     }
   ) => void)
+  exportPreview: ((
+    params: {
+      bufnr: number | string
+      mode?: string
+      outputPath?: string
+    }
+  ) => void)
 }
 
 interface IPlugin {
@@ -69,6 +76,12 @@ export default function(options: Attach): IPlugin {
     } else if (method === 'open_browser') {
       app.openBrowser({
         bufnr
+      })
+    } else if (method === 'export_preview') {
+      app.exportPreview({
+        bufnr,
+        mode: opts.mode,
+        outputPath: opts.outputPath
       })
     }
   })

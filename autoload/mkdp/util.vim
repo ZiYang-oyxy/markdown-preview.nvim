@@ -66,6 +66,53 @@ function! mkdp#util#stop_preview() abort
   call mkdp#rpc#stop_server()
 endfunction
 
+function! s:ensure_export_server_ready() abort
+  if mkdp#rpc#get_server_status() !=# 1
+    call mkdp#util#echo_messages('Error', '[markdown-preview.nvim]: preview server is not running, run :MarkdownPreview first')
+    return v:false
+  endif
+  return v:true
+endfunction
+
+function! s:default_export_path() abort
+  let l:buf_path = expand('%:p')
+  if empty(l:buf_path)
+    return getcwd() . '/markdown-preview.preview.html'
+  endif
+  return fnamemodify(l:buf_path, ':r') . '.preview.html'
+endfunction
+
+function! s:resolve_export_path(path) abort
+  let l:path = trim(a:path)
+  if empty(l:path)
+    return s:default_export_path()
+  endif
+  let l:expanded = expand(l:path)
+  return fnamemodify(l:expanded, ':p')
+endfunction
+
+function! mkdp#util#export_preview_download() abort
+  if !s:ensure_export_server_ready()
+    return
+  endif
+  call mkdp#rpc#export_preview({
+        \ 'bufnr': bufnr('%'),
+        \ 'mode': 'download'
+        \ })
+endfunction
+
+function! mkdp#util#export_preview_file(path, ...) abort
+  if !s:ensure_export_server_ready()
+    return
+  endif
+  let l:output_path = s:resolve_export_path(a:path)
+  call mkdp#rpc#export_preview({
+        \ 'bufnr': bufnr('%'),
+        \ 'mode': 'write',
+        \ 'outputPath': l:output_path
+        \ })
+endfunction
+
 function! mkdp#util#get_platform() abort
   if has('win32') || has('win64')
     return 'win'
@@ -193,4 +240,3 @@ function! mkdp#util#toggle_preview() abort
         let b:MarkdownPreviewToggleBool=0
     endif
 endfunction
-

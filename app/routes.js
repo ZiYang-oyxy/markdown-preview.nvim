@@ -1,11 +1,76 @@
 const fs = require('fs')
+const http = require('http')
+const https = require('https')
 const path = require('path')
 const logger = require('./lib/util/logger')('app/routes')
 
 const routes = []
+const MAX_REMOTE_ASSET_SIZE = 30 * 1024 * 1024
+const MAX_REMOTE_REDIRECTS = 5
 
 const use = function (route) {
   routes.unshift((req, res, next) => () => route(req, res, next))
+}
+
+const fetchRemoteAsset = (target, redirects = 0) => {
+  return new Promise((resolve, reject) => {
+    let targetUrl
+    try {
+      targetUrl = new URL(target)
+    } catch (e) {
+      reject(new Error('invalid url'))
+      return
+    }
+
+    const requester = targetUrl.protocol === 'https:' ? https : http
+    if (targetUrl.protocol !== 'https:' && targetUrl.protocol !== 'http:') {
+      reject(new Error('unsupported protocol'))
+      return
+    }
+
+    const request = requester.get(targetUrl, (response) => {
+      const { statusCode = 0, headers = {} } = response
+      if ([301, 302, 303, 307, 308].includes(statusCode) && headers.location) {
+        response.resume()
+        if (redirects >= MAX_REMOTE_REDIRECTS) {
+          reject(new Error('too many redirects'))
+          return
+        }
+        const nextUrl = new URL(headers.location, targetUrl).toString()
+        resolve(fetchRemoteAsset(nextUrl, redirects + 1))
+        return
+      }
+
+      if (statusCode < 200 || statusCode >= 300) {
+        response.resume()
+        reject(new Error(`unexpected status code ${statusCode}`))
+        return
+      }
+
+      const chunks = []
+      let size = 0
+      response.on('data', chunk => {
+        size += chunk.length
+        if (size > MAX_REMOTE_ASSET_SIZE) {
+          request.destroy(new Error('asset too large'))
+          return
+        }
+        chunks.push(chunk)
+      })
+      response.on('end', () => {
+        resolve({
+          buffer: Buffer.concat(chunks),
+          contentType: headers['content-type'] || 'application/octet-stream'
+        })
+      })
+      response.on('error', reject)
+    })
+
+    request.setTimeout(15000, () => {
+      request.destroy(new Error('request timeout'))
+    })
+    request.on('error', reject)
+  })
 }
 
 // /page/:number
@@ -22,6 +87,40 @@ use((req, res, next) => {
     return fs.createReadStream(path.join('./out', req.asPath)).pipe(res)
   }
   next()
+})
+
+// /_mkdp_export_proxy?url=https://...
+use(async (req, res, next) => {
+  if (req.asPath !== '/_mkdp_export_proxy') {
+    next()
+    return
+  }
+
+  let remoteUrl = ''
+  try {
+    const url = new URL(req.url, 'http://localhost')
+    remoteUrl = url.searchParams.get('url') || ''
+  } catch (e) {
+    remoteUrl = ''
+  }
+
+  if (!remoteUrl) {
+    res.statusCode = 400
+    res.end('missing url')
+    return
+  }
+
+  try {
+    const { buffer, contentType } = await fetchRemoteAsset(remoteUrl)
+    res.statusCode = 200
+    res.setHeader('cache-control', 'no-store')
+    res.setHeader('content-type', contentType)
+    res.end(buffer)
+  } catch (e) {
+    logger.error('proxy fetch fail: ', remoteUrl, e.message || e)
+    res.statusCode = 502
+    res.end('failed to fetch resource')
+  }
 })
 
 // /_static/markdown.css

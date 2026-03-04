@@ -1,6 +1,7 @@
 exports.run = function () {
   // attach nvim
   const { plugin } = require('./nvim')
+  const fs = require('fs')
   const http = require('http')
   const websocket = require('socket.io')
 
@@ -10,6 +11,27 @@ exports.run = function () {
   const routes = require('./routes')
 
   let clients = {}
+  const pendingExportRequests = {}
+
+  const echoMessages = (hl, msgs) => {
+    plugin.nvim.call('mkdp#util#echo_messages', [hl, msgs])
+  }
+
+  const getConnectedClients = (bufnr) => {
+    return (clients[String(bufnr)] || []).filter(c => c && c.connected)
+  }
+
+  const clearPendingExportRequest = (requestId) => {
+    const pending = pendingExportRequests[requestId]
+    if (!pending) {
+      return null
+    }
+    if (pending.timeout) {
+      clearTimeout(pending.timeout)
+    }
+    delete pendingExportRequests[requestId]
+    return pending
+  }
 
   const openUrl = (url, browser) => {
     const handler = opener(url, browser)
@@ -25,7 +47,7 @@ exports.run = function () {
   }
 
   const update_clients_active_var = () => {
-    if (Object.values(clients).some(cs => cs.some(c => c.connected))) {
+    if (Object.values(clients).some(cs => cs.some(c => c && c.connected))) {
       plugin.nvim.setVar('mkdp_clients_active', 1)
     } else {
       plugin.nvim.setVar('mkdp_clients_active', 0)
@@ -91,9 +113,60 @@ exports.run = function () {
 
     client.on('disconnect', function () {
       logger.info('disconnect: ', client.id)
-      clients[bufnr] = (clients[bufnr] || []).map(c => c.id !== client.id)
+      clients[bufnr] = (clients[bufnr] || []).filter(c => c && c.id !== client.id)
+      Object.keys(pendingExportRequests).forEach(requestId => {
+        const pending = pendingExportRequests[requestId]
+        if (pending && pending.clientId === client.id) {
+          clearPendingExportRequest(requestId)
+          echoMessages('Error', `[markdown-preview.nvim]: export failed because preview client disconnected (${pending.mode})`)
+        }
+      })
       // update vim variable
       update_clients_active_var();
+    })
+
+    client.on('mkdp_export_result', async (payload = {}) => {
+      const {
+        requestId = '',
+        ok = false,
+        error = '',
+        html = '',
+        warnings = []
+      } = payload
+
+      if (!requestId) {
+        return
+      }
+
+      const pending = pendingExportRequests[requestId]
+      if (!pending || pending.clientId !== client.id) {
+        return
+      }
+      clearPendingExportRequest(requestId)
+
+      if (warnings && warnings.length) {
+        const warningMessages = ['[markdown-preview.nvim]: export finished with warnings'].concat(warnings)
+        echoMessages('Type', warningMessages)
+      }
+
+      if (!ok) {
+        const errMsg = error || 'unknown export error'
+        echoMessages('Error', `[markdown-preview.nvim]: export failed: ${errMsg}`)
+        return
+      }
+
+      if (pending.mode === 'write') {
+        try {
+          await fs.promises.writeFile(pending.outputPath, html, 'utf8')
+          echoMessages('Type', `[markdown-preview.nvim]: exported preview to ${pending.outputPath}`)
+        } catch (e) {
+          logger.error('write exported html fail: ', pending.outputPath, e)
+          echoMessages('Error', `[markdown-preview.nvim]: export write failed: ${pending.outputPath}`)
+        }
+        return
+      }
+
+      echoMessages('Type', '[markdown-preview.nvim]: export download triggered')
     })
   })
 
@@ -138,7 +211,7 @@ exports.run = function () {
       }
       async function openBrowser ({ bufnr }) {
         const combinePreview = await plugin.nvim.getVar('mkdp_combine_preview')
-        if (combinePreview && Object.values(clients).some(cs => cs.some(c => c.connected))) {
+        if (combinePreview && Object.values(clients).some(cs => cs.some(c => c && c.connected))) {
           logger.info(`combine preview page: `, bufnr)
           Object.values(clients).forEach(cs => {
             cs.forEach(c => {
@@ -170,11 +243,45 @@ exports.run = function () {
           }
         }
       }
+      function exportPreview ({ bufnr, mode = 'download', outputPath = '' }) {
+        const selectedMode = mode === 'write' ? 'write' : 'download'
+        const availableClients = getConnectedClients(bufnr)
+        if (!availableClients.length) {
+          echoMessages('Error', '[markdown-preview.nvim]: no active preview page, open :MarkdownPreview first')
+          return
+        }
+        if (selectedMode === 'write' && !outputPath) {
+          echoMessages('Error', '[markdown-preview.nvim]: output path is required for file export')
+          return
+        }
+
+        const requestId = `mkdp-export-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
+        const timeout = setTimeout(() => {
+          const pending = clearPendingExportRequest(requestId)
+          if (pending) {
+            echoMessages('Error', '[markdown-preview.nvim]: export request timed out')
+          }
+        }, 60000)
+
+        pendingExportRequests[requestId] = {
+          bufnr: String(bufnr),
+          clientId: availableClients[0].id,
+          mode: selectedMode,
+          outputPath,
+          timeout
+        }
+
+        availableClients[0].emit('mkdp_export_request', {
+          requestId,
+          mode: selectedMode
+        })
+      }
       plugin.init({
         refreshPage,
         closePage,
         closeAllPages,
-        openBrowser
+        openBrowser,
+        exportPreview
       })
 
       plugin.nvim.call('mkdp#util#open_browser')

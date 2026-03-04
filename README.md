@@ -78,7 +78,13 @@ Add this in your `init.lua or plugins.lua`
 -- install without yarn or npm
 {
     "iamcco/markdown-preview.nvim",
-    cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+    cmd = {
+      "MarkdownPreviewToggle",
+      "MarkdownPreview",
+      "MarkdownPreviewStop",
+      "MarkdownPreviewExport",
+      "MarkdownPreviewExportFile"
+    },
     ft = { "markdown" },
     build = function() vim.fn["mkdp#util#install"]() end,
 }
@@ -86,7 +92,13 @@ Add this in your `init.lua or plugins.lua`
 -- install with yarn or npm
 {
   "iamcco/markdown-preview.nvim",
-  cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+  cmd = {
+    "MarkdownPreviewToggle",
+    "MarkdownPreview",
+    "MarkdownPreviewStop",
+    "MarkdownPreviewExport",
+    "MarkdownPreviewExportFile"
+  },
   build = "cd app && yarn install",
   init = function()
     vim.g.mkdp_filetypes = { "markdown" }
@@ -251,11 +263,16 @@ Mappings:
 <Plug>MarkdownPreview
 <Plug>MarkdownPreviewStop
 <Plug>MarkdownPreviewToggle
+<Plug>MarkdownPreviewExport
+<Plug>MarkdownPreviewExportFile
 
 " example
 nmap <C-s> <Plug>MarkdownPreview
 nmap <M-s> <Plug>MarkdownPreviewStop
 nmap <C-p> <Plug>MarkdownPreviewToggle
+
+" default mapping (built-in)
+nmap <leader>me <Plug>MarkdownPreviewExport
 ```
 
 Commands:
@@ -266,7 +283,17 @@ Commands:
 
 " Stop the preview"
 :MarkdownPreviewStop
+
+" Export current preview page to a self-contained html (browser download)
+:MarkdownPreviewExport
+
+" Export current preview page to a self-contained html file path
+" default path: current_file.preview.html
+:MarkdownPreviewExportFile [output_path]
 ```
+
+When preview page is open, there is also a built-in `导出 HTML` button in the page header.
+The page shortcut `Ctrl/Cmd+Shift+E` triggers browser download export as well.
 
 ### Custom Examples
 
