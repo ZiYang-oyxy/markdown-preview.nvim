@@ -590,18 +590,29 @@ export default class PreviewPage extends React.Component {
         disableFilename: options.disable_filename
       }, () => {
         if (refreshContent) {
+          bindPreviewInteractions(document)
+
           try {
             // eslint-disable-next-line
             mermaid.initialize({ theme: (this.state.theme || 'light'), ...(options.maid || {}) })
             // eslint-disable-next-line
-            mermaid.init(undefined, document.querySelectorAll('.mermaid'))
+            const mermaidRender = mermaid.init(undefined, document.querySelectorAll('.mermaid'))
+            if (mermaidRender && typeof mermaidRender.then === 'function') {
+              mermaidRender.then(() => {
+                bindPreviewInteractions(document)
+              }).catch(() => {
+                bindPreviewInteractions(document)
+              })
+            } else {
+              window.setTimeout(() => bindPreviewInteractions(document), 0)
+            }
           } catch (e) { }
 
           chart.render()
           renderDiagram()
           renderFlowchart()
           renderDot()
-          bindPreviewInteractions(document)
+          window.setTimeout(() => bindPreviewInteractions(document), 0)
           this.updateTocItems()
         }
         refreshScroll()

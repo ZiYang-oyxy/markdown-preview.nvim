@@ -120,7 +120,7 @@ const openViewer = (source, kind) => {
     content.decoding = 'async'
   }
 
-  content.className = `mkdp-preview-content ${kind === 'svg' ? 'is-svg' : 'is-image'}`
+  content.setAttribute('class', `mkdp-preview-content ${kind === 'svg' ? 'is-svg' : 'is-image'}`)
   content.draggable = false
 
   if (kind === 'svg') {
