@@ -3,14 +3,50 @@ import {escape} from './utils';
 /*
  * global mermaid
 */
-const mermaidChart = (code) => {
-  try {
-    // eslint-disable-next-line
-    mermaid.parse(code)
-    return `<div class="mermaid">${escape(code)}</div>`
-  } catch ({ str, hash }) {
-    return `<pre>${str}</pre>`
+const MERMAID_KEYWORDS = [
+  'flowchart',
+  'graph',
+  'sequenceDiagram',
+  'classDiagram',
+  'stateDiagram',
+  'stateDiagram-v2',
+  'erDiagram',
+  'journey',
+  'gantt',
+  'pie',
+  'mindmap',
+  'timeline',
+  'gitGraph',
+  'requirementDiagram',
+  'c4Context',
+  'c4Container',
+  'c4Component',
+  'c4Dynamic',
+  'c4Deployment',
+  'quadrantChart',
+  'xychart-beta',
+  'sankey-beta',
+  'block-beta',
+  'packet-beta',
+  'kanban',
+  'architecture-beta'
+]
+
+const isMermaidStartLine = (line = '') => {
+  const first = line.trim()
+  if (!first) {
+    return false
   }
+
+  if (first.startsWith('graph ')) {
+    return true
+  }
+
+  return MERMAID_KEYWORDS.some((keyword) => first === keyword || first.startsWith(`${keyword} `))
+}
+
+const mermaidChart = (code) => {
+  return `<div class="mermaid">${escape(code)}</div>`
 }
 
 const MermaidPlugin = (md) => {
@@ -22,10 +58,7 @@ const MermaidPlugin = (md) => {
       return mermaidChart(code)
     }
     const firstLine = code.split(/\n/)[0].trim()
-    if (firstLine === 'gantt' ||
-      firstLine === 'sequenceDiagram' ||
-      firstLine === 'erDiagram' ||
-      firstLine.match(/^graph (?:TB|BT|RL|LR|TD);?$/)) {
+    if (isMermaidStartLine(firstLine)) {
       return mermaidChart(code)
     }
     return origin(tokens, idx, options, env, slf)
