@@ -20,6 +20,7 @@ import flowchart, { renderFlowchart } from './flowchart'
 import dot, { renderDot } from './dot'
 import blockUml from './blockPlantuml'
 import codeUml from './plantuml'
+import { bindPreviewInteractions, closePreviewInteractions } from './preview'
 import scrollToLine from './scroll'
 import { meta } from './meta';
 import markdownImSize from './markdown-it-imsize'
@@ -452,6 +453,7 @@ export default class PreviewPage extends React.Component {
 
     window.removeEventListener('keydown', this.handleWindowKeydown)
     window.removeEventListener('scroll', this.handleWindowScroll)
+    closePreviewInteractions()
     this.cleanupHeadingObserver()
   }
 
@@ -599,6 +601,7 @@ export default class PreviewPage extends React.Component {
           renderDiagram()
           renderFlowchart()
           renderDot()
+          bindPreviewInteractions(document)
           this.updateTocItems()
         }
         refreshScroll()
