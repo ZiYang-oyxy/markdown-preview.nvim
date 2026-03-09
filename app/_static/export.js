@@ -1,5 +1,6 @@
 ;(function () {
   var EXPORT_BUTTON_ID = 'mkdp-export-btn'
+  var EXPORT_SLOT_ID = 'mkdp-export-slot'
   var EXPORT_SHORTCUT_LABEL = 'Ctrl/Cmd+Shift+E'
   var EXPORT_TIMEOUT_MS = 60000
   var assetDataUrlCache = new Map()
@@ -397,7 +398,8 @@
       return
     }
 
-    var button = header.querySelector('#' + EXPORT_BUTTON_ID)
+    var host = document.getElementById(EXPORT_SLOT_ID) || header
+    var button = document.getElementById(EXPORT_BUTTON_ID)
     if (!button) {
       button = document.createElement('button')
       button.type = 'button'
@@ -408,7 +410,12 @@
       button.addEventListener('click', function () {
         runExport({ mode: 'download' })
       })
-      header.appendChild(button)
+      host.appendChild(button)
+      return
+    }
+
+    if (button.parentNode !== host) {
+      host.appendChild(button)
     }
   }
 

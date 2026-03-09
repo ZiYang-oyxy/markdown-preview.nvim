@@ -138,6 +138,11 @@ main {
   gap: 8px;
 }
 
+#mkdp-export-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
 .mkdp-export-btn {
   height: 26px;
   border: 1px solid var(--border-color);

@@ -802,17 +802,20 @@ export default class PreviewPage extends React.Component {
                       </svg>
                       {name}
                     </h3>
-                    {themeModeIsVisible && (
-                      <label id="toggle-theme" htmlFor="theme">
-                        <input
-                          id="theme"
-                          type="checkbox"
-                          checked={theme === "dark"}
-                          onChange={this.handleThemeChange}
-                        />
-                        <span>Dark Mode</span>
-                      </label>
-                    )}
+                    <div className="mkdp-header-actions">
+                      {themeModeIsVisible && (
+                        <label id="toggle-theme" htmlFor="theme">
+                          <input
+                            id="theme"
+                            type="checkbox"
+                            checked={theme === "dark"}
+                            onChange={this.handleThemeChange}
+                          />
+                          <span>Dark Mode</span>
+                        </label>
+                      )}
+                      <span id="mkdp-export-slot" aria-hidden="true"></span>
+                    </div>
                   </header>
                 }
                 <section
