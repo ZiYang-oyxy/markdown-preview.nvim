@@ -158,6 +158,7 @@ gantt
 ```mermaid
 graph LR
 A[Christmas] -->|Get money| B(Go shopping)
+B --> C[Line one\nLine two]
 ```
 
 ```mermaid
