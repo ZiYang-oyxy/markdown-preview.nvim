@@ -21,7 +21,18 @@ body {
   --shadow-strong: 0 20px 42px rgba(15, 23, 42, 0.16);
   --toc-accent: #0969da;
   --toc-accent-soft: rgba(9, 105, 218, 0.14);
+  --control-active-bg: rgba(9, 105, 218, 0.12);
+  --control-active-border: rgba(9, 105, 218, 0.26);
   --toc-muted: #57606a;
+  --preview-overlay-tint: rgba(241, 245, 249, 0.2);
+  --preview-overlay-glow: rgba(255, 255, 255, 0.28);
+  --preview-overlay-accent: rgba(148, 163, 184, 0.22);
+  --preview-toolbar-bg: rgba(255, 255, 255, 0.2);
+  --preview-toolbar-border: rgba(255, 255, 255, 0.32);
+  --preview-toolbar-button-bg: rgba(255, 255, 255, 0.16);
+  --preview-toolbar-button-hover: rgba(255, 255, 255, 0.3);
+  --preview-toolbar-color: #0f172a;
+  --preview-image-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
 }
 
 body.mkdp-preview-open {
@@ -40,7 +51,18 @@ body.mkdp-preview-open {
   --shadow-strong: 0 20px 44px rgba(0, 0, 0, 0.42);
   --toc-accent: #58a6ff;
   --toc-accent-soft: rgba(88, 166, 255, 0.2);
+  --control-active-bg: rgba(88, 166, 255, 0.18);
+  --control-active-border: rgba(88, 166, 255, 0.3);
   --toc-muted: #8b949e;
+  --preview-overlay-tint: rgba(15, 23, 42, 0.24);
+  --preview-overlay-glow: rgba(125, 211, 252, 0.1);
+  --preview-overlay-accent: rgba(59, 130, 246, 0.1);
+  --preview-toolbar-bg: rgba(15, 23, 42, 0.26);
+  --preview-toolbar-border: rgba(255, 255, 255, 0.14);
+  --preview-toolbar-button-bg: rgba(255, 255, 255, 0.08);
+  --preview-toolbar-button-hover: rgba(255, 255, 255, 0.16);
+  --preview-toolbar-color: #f8fafc;
+  --preview-image-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
 }
 
 main {
@@ -114,37 +136,25 @@ main {
   overflow: hidden;
 }
 
-#toggle-theme {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 24px;
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-
-#toggle-theme input,
-#toggle-theme span {
-  vertical-align: middle;
-}
-
-.mkdp-header-actions {
-  margin-left: auto;
+.mkdp-page-control {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
-#mkdp-export-slot {
-  display: inline-flex;
-  align-items: center;
+.mkdp-page-control-label {
+  flex: 0 0 auto;
+  color: var(--toc-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
+.mkdp-page-control-select,
 .mkdp-export-btn {
-  height: 26px;
+  min-height: 28px;
   border: 1px solid var(--border-color);
   border-radius: 999px;
   background: var(--surface-color);
@@ -154,11 +164,51 @@ main {
   line-height: 1;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
 }
 
-.mkdp-export-btn:hover {
+.mkdp-page-control-select {
+  min-width: 96px;
+  padding-right: 30px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--toc-muted) 50%),
+    linear-gradient(135deg, var(--toc-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 1px),
+    calc(100% - 13px) calc(50% - 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.mkdp-page-control-select:hover,
+.mkdp-page-control-select:focus,
+.mkdp-export-btn:hover,
+.mkdp-export-btn:focus {
   background: var(--secondary-background-color);
+}
+
+.mkdp-header-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+#mkdp-export-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
+.mkdp-page-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
 }
 
 .mkdp-export-btn:disabled {
@@ -208,28 +258,26 @@ main {
   position: fixed;
   inset: 0;
   display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(10px) saturate(120%);
+  background:
+    radial-gradient(circle at top left, var(--preview-overlay-glow), transparent 30%),
+    radial-gradient(circle at bottom right, var(--preview-overlay-accent), transparent 36%),
+    var(--preview-overlay-tint);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(28px) saturate(150%);
   z-index: 9999;
 }
 
 .mkdp-preview-viewer.is-open {
-  display: flex;
+  display: block;
 }
 
 .mkdp-preview-viewport {
-  position: relative;
-  width: min(96vw, 1400px);
-  height: min(92vh, 1000px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 18px;
-  background: rgba(9, 14, 24, 0.92);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  position: absolute;
+  inset: 0;
+  background: transparent;
   overflow: hidden;
   cursor: grab;
+  touch-action: none;
 }
 
 .mkdp-preview-viewport.is-dragging {
@@ -244,33 +292,35 @@ main {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--preview-toolbar-border);
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.82);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
-  z-index: 2;
+  background: var(--preview-toolbar-bg);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  z-index: 3;
 }
 
 .mkdp-preview-toolbar-btn {
   height: 32px;
   min-width: 32px;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
+  background: var(--preview-toolbar-button-bg);
+  color: var(--preview-toolbar-color);
   cursor: pointer;
   font-size: 13px;
   line-height: 1;
 }
 
 .mkdp-preview-toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--preview-toolbar-button-hover);
 }
 
 .mkdp-preview-scale {
   min-width: 54px;
-  color: rgba(248, 250, 252, 0.9);
+  color: var(--preview-toolbar-color);
   font-size: 12px;
   text-align: center;
 }
@@ -281,41 +331,33 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 96px 32px 32px;
+  box-sizing: border-box;
   overflow: hidden;
+  user-select: none;
 }
 
 .mkdp-preview-content {
   flex: 0 0 auto;
   max-width: none;
   max-height: none;
+  position: relative;
   transform-origin: center center;
   user-select: none;
   will-change: transform;
 }
 
 .mkdp-preview-content.is-image {
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.26);
+  box-shadow: var(--preview-image-shadow);
 }
 
 .mkdp-preview-content.is-svg {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="dark"] .mkdp-preview-content.is-svg {
-  background: #0d1117;
+  filter: drop-shadow(0 18px 36px rgba(15, 23, 42, 0.12));
 }
 
 @media (max-width: 768px) {
-  .mkdp-preview-viewer {
-    padding: 12px;
-  }
-
-  .mkdp-preview-viewport {
-    width: 100vw;
-    height: 100vh;
-    border-radius: 0;
+  .mkdp-preview-stage {
+    padding: 88px 16px 16px;
   }
 
   .mkdp-preview-toolbar {
@@ -442,6 +484,7 @@ main {
   outline-offset: 1px;
 }
 
+.mkdp-page-control-select:focus-visible,
 .mkdp-export-btn:focus-visible {
   outline: 2px solid var(--toc-accent);
   outline-offset: 1px;
@@ -522,8 +565,14 @@ main {
   }
 
   #page-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
+  }
+
+  #page-header h3 {
+    width: 100%;
   }
 
   #page-ctn.header-hidden .markdown-body {
@@ -602,6 +651,12 @@ main {
     max-height: calc(100vh - 64px);
     padding: 12px 14px 16px;
   }
+
+  .mkdp-header-actions,
+  .mkdp-page-toolbar {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
@@ -613,13 +668,27 @@ main {
     font-size: 13px;
   }
 
-  #toggle-theme {
+  .mkdp-page-control {
+    gap: 6px;
+  }
+
+  .mkdp-page-control-label {
     font-size: 11px;
   }
 
+  .mkdp-page-control-select,
   .mkdp-export-btn {
-    height: 24px;
+    min-height: 24px;
     padding: 0 10px;
     font-size: 11px;
+  }
+
+  .mkdp-page-control-select {
+    min-width: 88px;
+    padding-right: 28px;
+    background-position:
+      calc(100% - 16px) calc(50% - 1px),
+      calc(100% - 11px) calc(50% - 1px);
+    background-size: 4px 4px, 4px 4px;
   }
 }
