@@ -195,6 +195,7 @@ let g:mkdp_browserfunc = ''
 " katex: KaTeX options for math
 " uml: markdown-it-plantuml options
 " maid: mermaid options
+"   themePreset: 'modern', 'minimal', 'warm' or 'forest', default is 'modern'
 " disable_sync_scroll: whether to disable sync scroll, default 0
 " sync_scroll_type: 'middle', 'top' or 'relative', default value is 'middle'
 "   middle: means the cursor position is always at the middle of the preview page
@@ -217,6 +218,13 @@ let g:mkdp_preview_options = {
     \ 'content_editable': v:false,
     \ 'disable_filename': 0,
     \ 'toc': {}
+    \ }
+
+" Example: select a built-in Mermaid theme preset
+let g:mkdp_preview_options = {
+    \ 'maid': {
+    \   'themePreset': 'forest'
+    \ }
     \ }
 
 " use a custom Markdown style. Must be an absolute path
@@ -294,6 +302,7 @@ Commands:
 
 When preview page is open, there is also a built-in `导出 HTML` button in the page header.
 The page shortcut `Ctrl/Cmd+Shift+E` triggers browser download export as well.
+Exported standalone HTML keeps the in-page theme switches, Mermaid theme switches, and preview overlay interactions working offline.
 
 ### Custom Examples
 

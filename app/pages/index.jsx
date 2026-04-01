@@ -20,6 +20,7 @@ import flowchart, { renderFlowchart } from './flowchart'
 import dot, { renderDot } from './dot'
 import blockUml from './blockPlantuml'
 import codeUml from './plantuml'
+import createMermaidConfig, { MERMAID_THEME_PRESETS, resolveThemePreset } from './mermaid-theme'
 import { bindPreviewInteractions, closePreviewInteractions } from './preview'
 import scrollToLine from './scroll'
 import { meta } from './meta';
@@ -27,6 +28,17 @@ import markdownImSize from './markdown-it-imsize'
 import { escape} from './utils';
 
 const anchorSymbol = '<svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg>'
+const MERMAID_SOURCE_DATASET = 'mkdpMermaidSource'
+const THEME_MODE_OPTIONS = [
+  { value: 'light', label: '白底' },
+  { value: 'dark', label: '黑底' }
+]
+const MERMAID_THEME_LABELS = {
+  modern: '现代',
+  minimal: '极简',
+  warm: '暖色',
+  forest: '森林'
+}
 
 const DEFAULT_OPTIONS = {
   mkit: {
@@ -107,6 +119,7 @@ export default class PreviewPage extends React.Component {
     this.preContent = ''
     this.timer = undefined
     this.bufnr = -1;
+    this.currentMermaidOptions = {}
     this.tocCache = ''
     this.headingObserver = null
     this.headingElements = []
@@ -120,7 +133,8 @@ export default class PreviewPage extends React.Component {
       content: '',
       pageTitle: '',
       theme: '',
-      themeModeIsVisible: false,
+      mermaidThemePreset: '',
+      mermaidThemePresetTouched: false,
       contentEditable: false,
       disableFilename: 1,
       tocItems: [],
@@ -129,9 +143,8 @@ export default class PreviewPage extends React.Component {
       activeTocId: '',
       isTocDrawerOpen: false
     }
-    this.showThemeButton = this.showThemeButton.bind(this)
-    this.hideThemeButton = this.hideThemeButton.bind(this)
-    this.handleThemeChange = this.handleThemeChange.bind(this)
+    this.handleThemeModeChange = this.handleThemeModeChange.bind(this)
+    this.handleMermaidThemePresetChange = this.handleMermaidThemePresetChange.bind(this)
     this.handleTocDrawerOpen = this.handleTocDrawerOpen.bind(this)
     this.handleTocDrawerClose = this.handleTocDrawerClose.bind(this)
     this.handleTocDrawerBackdrop = this.handleTocDrawerBackdrop.bind(this)
@@ -142,20 +155,130 @@ export default class PreviewPage extends React.Component {
     this.handleWindowScroll = this.handleWindowScroll.bind(this)
     this.updateActiveHeadingByScroll = this.updateActiveHeadingByScroll.bind(this)
     this.syncTocNavToActiveItem = this.syncTocNavToActiveItem.bind(this)
+    this.renderMermaidDiagrams = this.renderMermaidDiagrams.bind(this)
+    this.renderPageActions = this.renderPageActions.bind(this)
+    this.setThemeMode = this.setThemeMode.bind(this)
+    this.setMermaidThemePreset = this.setMermaidThemePreset.bind(this)
   }
 
-  handleThemeChange() {
-    this.setState((state) => ({
-      theme: state.theme === 'light' ? 'dark' : 'light',
-    }))
+  setThemeMode(theme) {
+    this.setState({
+      theme
+    }, () => {
+      this.renderMermaidDiagrams()
+    })
   }
 
-  showThemeButton() {
-    this.setState({ themeModeIsVisible: true })
+  handleThemeModeChange(event) {
+    this.setThemeMode(event.target.value)
   }
 
-  hideThemeButton() {
-    this.setState({ themeModeIsVisible: false })
+  getConfiguredMermaidThemePreset(maidOptions = this.currentMermaidOptions) {
+    return resolveThemePreset(maidOptions || {})
+  }
+
+  getActiveMermaidThemePreset() {
+    return this.state.mermaidThemePreset || this.getConfiguredMermaidThemePreset()
+  }
+
+  setMermaidThemePreset(themePreset) {
+    this.setState({
+      mermaidThemePreset: themePreset,
+      mermaidThemePresetTouched: true
+    }, () => {
+      this.renderMermaidDiagrams()
+    })
+  }
+
+  handleMermaidThemePresetChange(event) {
+    this.setMermaidThemePreset(event.target.value)
+  }
+
+  renderMermaidDiagrams(root = document) {
+    if (typeof document === 'undefined' || typeof mermaid === 'undefined' || !root) {
+      return
+    }
+
+    const mermaidNodes = root.querySelectorAll('.mermaid')
+    if (!mermaidNodes.length) {
+      return
+    }
+
+    mermaidNodes.forEach((node) => {
+      if (!node.dataset[MERMAID_SOURCE_DATASET]) {
+        node.dataset[MERMAID_SOURCE_DATASET] = node.innerHTML
+      }
+
+      node.innerHTML = node.dataset[MERMAID_SOURCE_DATASET]
+      node.removeAttribute('data-processed')
+    })
+
+    try {
+      mermaid.initialize(createMermaidConfig(this.state.theme || 'light', {
+        ...(this.currentMermaidOptions || {}),
+        themePreset: this.getActiveMermaidThemePreset()
+      }))
+
+      const mermaidRender = mermaid.init(undefined, mermaidNodes)
+      if (mermaidRender && typeof mermaidRender.then === 'function') {
+        mermaidRender.then(() => {
+          bindPreviewInteractions(root)
+        }).catch(() => {
+          bindPreviewInteractions(root)
+        })
+      } else {
+        window.setTimeout(() => bindPreviewInteractions(root), 0)
+      }
+    } catch (e) { }
+  }
+
+  renderPageActions() {
+    const activeThemeMode = this.state.theme || 'light'
+    const activeMermaidThemePreset = this.getActiveMermaidThemePreset()
+
+    return (
+      <div className="mkdp-header-actions">
+        <label className="mkdp-page-control" htmlFor="theme-mode-select">
+          <span className="mkdp-page-control-label">颜色</span>
+          <select
+            id="theme-mode-select"
+            className="mkdp-page-control-select"
+            aria-label="颜色"
+            value={activeThemeMode}
+            onChange={this.handleThemeModeChange}
+          >
+            {THEME_MODE_OPTIONS.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="mkdp-page-control" htmlFor="mermaid-theme-preset">
+          <span className="mkdp-page-control-label">Mermaid</span>
+          <select
+            id="mermaid-theme-preset"
+            className="mkdp-page-control-select"
+            aria-label="Mermaid 主题"
+            value={activeMermaidThemePreset}
+            onChange={this.handleMermaidThemePresetChange}
+          >
+            {MERMAID_THEME_PRESETS.map((preset) => (
+              <option
+                key={preset}
+                value={preset}
+              >
+                {MERMAID_THEME_LABELS[preset] || preset}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span id="mkdp-export-slot" aria-hidden="true"></span>
+      </div>
+    )
   }
 
   getExpandedTocMap(tocItems, previousMap = {}) {
@@ -485,6 +608,15 @@ export default class PreviewPage extends React.Component {
     name = '',
     content
   }) {
+    this.currentMermaidOptions = options.maid || {}
+
+    if (!this.state.mermaidThemePresetTouched) {
+      const configuredMermaidThemePreset = this.getConfiguredMermaidThemePreset(this.currentMermaidOptions)
+      if (configuredMermaidThemePreset !== this.state.mermaidThemePreset) {
+        this.setState({ mermaidThemePreset: configuredMermaidThemePreset })
+      }
+    }
+
     if (!this.md) {
       const {
         mkit = {},
@@ -586,27 +718,15 @@ export default class PreviewPage extends React.Component {
         ),
         pageTitle,
         theme,
+        ...(this.state.mermaidThemePresetTouched
+          ? {}
+          : { mermaidThemePreset: this.getConfiguredMermaidThemePreset(this.currentMermaidOptions) }),
         contentEditable: options.content_editable,
         disableFilename: options.disable_filename
       }, () => {
         if (refreshContent) {
           bindPreviewInteractions(document)
-
-          try {
-            // eslint-disable-next-line
-            mermaid.initialize({ theme: (this.state.theme || 'light'), ...(options.maid || {}) })
-            // eslint-disable-next-line
-            const mermaidRender = mermaid.init(undefined, document.querySelectorAll('.mermaid'))
-            if (mermaidRender && typeof mermaidRender.then === 'function') {
-              mermaidRender.then(() => {
-                bindPreviewInteractions(document)
-              }).catch(() => {
-                bindPreviewInteractions(document)
-              })
-            } else {
-              window.setTimeout(() => bindPreviewInteractions(document), 0)
-            }
-          } catch (e) { }
+          this.renderMermaidDiagrams(document)
 
           chart.render()
           renderDiagram()
@@ -686,11 +806,9 @@ export default class PreviewPage extends React.Component {
 
   render() {
     const {
-      theme,
       content,
       name,
       pageTitle,
-      themeModeIsVisible,
       contentEditable,
       disableFilename,
       tocItems,
@@ -783,8 +901,6 @@ export default class PreviewPage extends React.Component {
                 {disableFilename == 0 &&
                   <header
                     id="page-header"
-                    onMouseEnter={this.showThemeButton}
-                    onMouseLeave={this.hideThemeButton}
                   >
                     <h3>
                       <svg
@@ -802,22 +918,14 @@ export default class PreviewPage extends React.Component {
                       </svg>
                       {name}
                     </h3>
-                    <div className="mkdp-header-actions">
-                      {themeModeIsVisible && (
-                        <label id="toggle-theme" htmlFor="theme">
-                          <input
-                            id="theme"
-                            type="checkbox"
-                            checked={theme === "dark"}
-                            onChange={this.handleThemeChange}
-                          />
-                          <span>Dark Mode</span>
-                        </label>
-                      )}
-                      <span id="mkdp-export-slot" aria-hidden="true"></span>
-                    </div>
+                    {this.renderPageActions()}
                   </header>
                 }
+                {disableFilename != 0 && (
+                  <div className="mkdp-page-toolbar">
+                    {this.renderPageActions()}
+                  </div>
+                )}
                 <section
                   className="markdown-body"
                   dangerouslySetInnerHTML={{

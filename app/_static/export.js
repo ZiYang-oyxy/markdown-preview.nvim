@@ -4,6 +4,7 @@
   var EXPORT_SHORTCUT_LABEL = 'Ctrl/Cmd+Shift+E'
   var EXPORT_TIMEOUT_MS = 60000
   var assetDataUrlCache = new Map()
+  var assetTextCache = new Map()
   var currentSocket = null
   var isExporting = false
 
@@ -125,6 +126,10 @@
   }
 
   async function fetchAssetAsText(assetUrl, warnings) {
+    if (assetTextCache.has(assetUrl)) {
+      return assetTextCache.get(assetUrl)
+    }
+
     var requestUrl = shouldProxyUrl(assetUrl) ? toProxyUrl(assetUrl) : assetUrl
     try {
       var response = await fetch(requestUrl, {
@@ -133,11 +138,17 @@
       if (!response.ok) {
         throw new Error('HTTP ' + response.status)
       }
-      return await response.text()
+      var text = await response.text()
+      assetTextCache.set(assetUrl, text)
+      return text
     } catch (e) {
       warnings.push('样式读取失败: ' + assetUrl + ' (' + (e.message || e) + ')')
       return ''
     }
+  }
+
+  function escapeInlineScript(scriptText) {
+    return String(scriptText || '').replace(/<\/script/gi, '<\\/script')
   }
 
   async function inlineCssUrls(cssText, baseUrl, warnings) {
@@ -252,6 +263,21 @@
     }
   }
 
+  function syncSelectValue(liveSelect, cloneSelect) {
+    if (!liveSelect || !cloneSelect) {
+      return
+    }
+
+    cloneSelect.value = liveSelect.value
+    Array.from(cloneSelect.options).forEach(function (option) {
+      if (option.value === liveSelect.value) {
+        option.setAttribute('selected', 'selected')
+      } else {
+        option.removeAttribute('selected')
+      }
+    })
+  }
+
   function clonePageRoot() {
     var nextRoot = document.getElementById('__next')
     if (!nextRoot) {
@@ -267,6 +293,22 @@
     if (shortcutTip) {
       shortcutTip.remove()
     }
+
+    var liveMain = document.querySelector('main')
+    var cloneMain = clone.querySelector('main')
+    if (liveMain && cloneMain) {
+      cloneMain.setAttribute('data-theme', liveMain.getAttribute('data-theme') || '')
+    }
+
+    syncSelectValue(
+      document.getElementById('theme-mode-select'),
+      clone.querySelector('#theme-mode-select')
+    )
+    syncSelectValue(
+      document.getElementById('mermaid-theme-preset'),
+      clone.querySelector('#mermaid-theme-preset')
+    )
+
     return clone
   }
 
@@ -275,6 +317,7 @@
     var pageClone = clonePageRoot()
     await inlineElementImages(pageClone, warnings)
     var inlineStyles = await collectInlineStyles(warnings)
+    var inlineScripts = await collectInlineScripts(pageClone, warnings)
     var title = escapeHtml(document.title || 'Markdown Preview')
     var html = [
       '<!DOCTYPE html>',
@@ -287,6 +330,7 @@
       '</head>',
       '<body>',
       pageClone.outerHTML,
+      inlineScripts,
       '</body>',
       '</html>'
     ].join('\n')
@@ -393,12 +437,13 @@
   }
 
   function ensureExportButton() {
+    var slot = document.getElementById(EXPORT_SLOT_ID)
     var header = document.getElementById('page-header')
-    if (!header) {
+    var host = slot || header
+    if (!host) {
       return
     }
 
-    var host = document.getElementById(EXPORT_SLOT_ID) || header
     var button = document.getElementById(EXPORT_BUTTON_ID)
     if (!button) {
       button = document.createElement('button')
@@ -417,6 +462,25 @@
     if (button.parentNode !== host) {
       host.appendChild(button)
     }
+  }
+
+  async function collectInlineScripts(pageClone, warnings) {
+    var scripts = []
+    var runtimeUrl = toAbsoluteUrl('/_static/standalone-runtime.js', window.location.href)
+    var runtimeSource = await fetchAssetAsText(runtimeUrl, warnings)
+    if (runtimeSource) {
+      scripts.push('<script>\n' + escapeInlineScript(runtimeSource) + '\n</script>')
+    }
+
+    if (pageClone.querySelector('.mermaid')) {
+      var mermaidUrl = toAbsoluteUrl('/_static/mermaid.min.js', window.location.href)
+      var mermaidSource = await fetchAssetAsText(mermaidUrl, warnings)
+      if (mermaidSource) {
+        scripts.unshift('<script>\n' + escapeInlineScript(mermaidSource) + '\n</script>')
+      }
+    }
+
+    return scripts.join('\n')
   }
 
   function watchHeaderButton() {

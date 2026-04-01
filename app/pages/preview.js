@@ -1,8 +1,37 @@
 const VIEWER_ID = 'mkdp-preview-viewer'
+const CLICK_CLOSE_THRESHOLD = 4
 
 let viewerState = null
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
+
+const getStagePadding = () => {
+  if (!viewerState || !viewerState.stage) {
+    return {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    }
+  }
+
+  const styles = window.getComputedStyle(viewerState.stage)
+
+  return {
+    top: parseFloat(styles.paddingTop) || 0,
+    right: parseFloat(styles.paddingRight) || 0,
+    bottom: parseFloat(styles.paddingBottom) || 0,
+    left: parseFloat(styles.paddingLeft) || 0
+  }
+}
+
+const isBackdropTarget = (target, state = viewerState) => {
+  if (!state) {
+    return false
+  }
+
+  return target === state.overlay || target === state.viewport || target === state.stage
+}
 
 const parseSvgSize = (svg) => {
   const widthAttr = parseFloat(svg.getAttribute('width'))
@@ -57,9 +86,10 @@ const fitContent = () => {
   }
 
   const viewportRect = viewerState.viewport.getBoundingClientRect()
+  const padding = getStagePadding()
   const { width, height } = viewerState.baseSize
-  const paddedWidth = Math.max(viewportRect.width - 80, 120)
-  const paddedHeight = Math.max(viewportRect.height - 80, 120)
+  const paddedWidth = Math.max(viewportRect.width - padding.left - padding.right, 120)
+  const paddedHeight = Math.max(viewportRect.height - padding.top - padding.bottom, 120)
   const fitScale = Math.min(paddedWidth / width, paddedHeight / height, 1)
 
   viewerState.scale = clamp(fitScale, 0.2, 6)
@@ -92,11 +122,30 @@ const zoomAtPoint = (nextScale, clientX, clientY) => {
   applyTransform()
 }
 
+const resetPointerState = () => {
+  if (!viewerState) {
+    return
+  }
+
+  viewerState.dragging = false
+  viewerState.dragStartX = 0
+  viewerState.dragStartY = 0
+  viewerState.pointerStartX = 0
+  viewerState.pointerStartY = 0
+  viewerState.pointerMoved = false
+  viewerState.pointerDownTarget = null
+
+  if (viewerState.viewport) {
+    viewerState.viewport.classList.remove('is-dragging')
+  }
+}
+
 const closeViewer = () => {
   if (!viewerState || !viewerState.overlay) {
     return
   }
 
+  resetPointerState()
   viewerState.overlay.classList.remove('is-open')
   viewerState.overlay.setAttribute('aria-hidden', 'true')
   viewerState.stage.innerHTML = ''
@@ -110,6 +159,7 @@ const openViewer = (source, kind) => {
     return
   }
 
+  resetPointerState()
   const content = kind === 'svg'
     ? source.cloneNode(true)
     : new window.Image()
@@ -197,6 +247,10 @@ const ensureViewer = () => {
     dragging: false,
     dragStartX: 0,
     dragStartY: 0,
+    pointerStartX: 0,
+    pointerStartY: 0,
+    pointerMoved: false,
+    pointerDownTarget: null,
     translateX: 0,
     translateY: 0,
     scale: 1,
@@ -226,14 +280,8 @@ const ensureViewer = () => {
   overlay.appendChild(viewport)
   document.body.appendChild(overlay)
 
-  overlay.addEventListener('click', (event) => {
-    if (event.target === overlay || event.target === viewport || event.target === stage) {
-      closeViewer()
-    }
-  })
-
   viewport.addEventListener('wheel', (event) => {
-    if (!state.content) {
+    if (!state.content || event.target.closest('.mkdp-preview-toolbar')) {
       return
     }
 
@@ -242,13 +290,18 @@ const ensureViewer = () => {
   }, { passive: false })
 
   viewport.addEventListener('pointerdown', (event) => {
-    if (!state.content || event.target.closest('.mkdp-preview-toolbar')) {
+    if (!state.content || event.target.closest('.mkdp-preview-toolbar') || event.button !== 0) {
       return
     }
 
+    event.preventDefault()
     state.dragging = true
     state.dragStartX = event.clientX - state.translateX
     state.dragStartY = event.clientY - state.translateY
+    state.pointerStartX = event.clientX
+    state.pointerStartY = event.clientY
+    state.pointerMoved = false
+    state.pointerDownTarget = event.target
     viewport.classList.add('is-dragging')
   })
 
@@ -257,18 +310,39 @@ const ensureViewer = () => {
       return
     }
 
+    const distance = Math.hypot(event.clientX - state.pointerStartX, event.clientY - state.pointerStartY)
+    if (!state.pointerMoved && distance < CLICK_CLOSE_THRESHOLD) {
+      return
+    }
+
+    state.pointerMoved = true
     state.translateX = event.clientX - state.dragStartX
     state.translateY = event.clientY - state.dragStartY
     applyTransform()
   })
 
-  window.addEventListener('pointerup', () => {
+  window.addEventListener('pointerup', (event) => {
     if (!state.dragging) {
       return
     }
 
-    state.dragging = false
-    viewport.classList.remove('is-dragging')
+    const shouldClose = !state.pointerMoved
+      && isBackdropTarget(state.pointerDownTarget, state)
+      && isBackdropTarget(event.target, state)
+
+    resetPointerState()
+
+    if (shouldClose) {
+      closeViewer()
+    }
+  })
+
+  window.addEventListener('pointercancel', () => {
+    if (!state.dragging) {
+      return
+    }
+
+    resetPointerState()
   })
 
   window.addEventListener('keydown', (event) => {
