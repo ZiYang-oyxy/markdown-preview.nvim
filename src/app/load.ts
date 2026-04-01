@@ -14,8 +14,7 @@ export default function load(scriptPath) {
 
   userModule.require = userModule.require.bind(userModule)
 
-  const sanbox = vm.createContext({
-    ...global,
+  const sandbox = {
     exports: userModule.exports,
     module: userModule,
     require: name => {
@@ -37,7 +36,11 @@ export default function load(scriptPath) {
     __filename: userModule.filename,
     __dirname: path.dirname(scriptPath),
     process,
-  })
+  }
+
+  Object.setPrototypeOf(sandbox, globalThis)
+
+  const sanbox = vm.createContext(sandbox)
 
   vm.runInContext(moduleCode, sanbox, { filename: userModule.filename })
 
