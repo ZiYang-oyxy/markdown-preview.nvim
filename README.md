@@ -292,17 +292,17 @@ Commands:
 " Stop the preview"
 :MarkdownPreviewStop
 
-" Export current preview page to a self-contained html (browser download)
+" Export current preview page to a self-contained static html (browser download)
 :MarkdownPreviewExport
 
-" Export current preview page to a self-contained html file path
+" Export current preview page to a self-contained static html file path
 " default path: current_file.preview.html
 :MarkdownPreviewExportFile [output_path]
 ```
 
 When preview page is open, there is also a built-in `导出 HTML` button in the page header.
 The page shortcut `Ctrl/Cmd+Shift+E` triggers browser download export as well.
-Exported standalone HTML keeps the in-page theme switches, Mermaid theme switches, and preview overlay interactions working offline.
+Exported HTML is a lightweight static snapshot. It keeps the current rendered content and selected theme, but strips offline runtime features such as theme switches, Mermaid theme switches, image preview overlays, and other page-only controls from the exported file.
 
 ### Custom Examples
 
