@@ -147,8 +147,54 @@
     }
   }
 
-  function escapeInlineScript(scriptText) {
-    return String(scriptText || '').replace(/<\/script/gi, '<\\/script')
+  function stripFontFaceRules(cssText) {
+    return String(cssText || '').replace(/@font-face\s*{[^}]*}/gi, '')
+  }
+
+  function stripUnusedStandaloneCss(cssText) {
+    return String(cssText || '')
+      .replace(/\/\*\s*HEIC图片处理状态样式\s*\*\/[\s\S]*$/i, '')
+  }
+
+  function shouldKeepInlineStyle(cssText, pageClone) {
+    var text = String(cssText || '')
+    if (!text.trim()) {
+      return false
+    }
+
+    if (/immersive-translate-|imt-|\.heic-/i.test(text)) {
+      return false
+    }
+
+    if (/#mermaid-[\w-]+/i.test(text) && !pageClone.querySelector('.mermaid svg')) {
+      return false
+    }
+
+    return true
+  }
+
+  function normalizeCssForDedup(cssText) {
+    return String(cssText || '').replace(/\s+/g, ' ').trim()
+  }
+
+  function shouldInlineStylesheet(pathname, pageClone) {
+    if (!pathname) {
+      return false
+    }
+
+    if (/\/page\.css$/i.test(pathname) || /\/markdown\.css$/i.test(pathname) || /\/highlight\.css$/i.test(pathname)) {
+      return true
+    }
+
+    if (/\/katex@[^/]+\.css$/i.test(pathname)) {
+      return !!pageClone.querySelector('.katex')
+    }
+
+    if (/\/sequence-diagram-min\.css$/i.test(pathname)) {
+      return !!pageClone.querySelector('.sequence-diagram')
+    }
+
+    return false
   }
 
   async function inlineCssUrls(cssText, baseUrl, warnings) {
@@ -176,11 +222,28 @@
     })
   }
 
-  async function collectInlineStyles(warnings) {
-    var styles = []
+  async function collectInlineStyles(pageClone, warnings) {
+    var styles = [
+      '.mkdp-static-image-link{display:block;cursor:zoom-in;text-decoration:none;}',
+      '.mkdp-static-mermaid-image{display:block;width:100%;height:auto;}',
+      '.mkdp-static-mermaid-svg{display:block;width:100%;height:auto;max-width:100%;cursor:zoom-in;}',
+      '.mkdp-static-lightbox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,0.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9999;}',
+      '.mkdp-static-lightbox:target{display:flex;}',
+      '.mkdp-static-lightbox-stage{position:relative;display:flex;align-items:center;justify-content:center;max-width:min(96vw, 1800px);max-height:92vh;padding:24px;background:#fff;border-radius:16px;box-shadow:0 24px 80px rgba(15,23,42,0.35);overflow:auto;}',
+      '.mkdp-static-lightbox-close{position:absolute;top:10px;right:12px;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;background:rgba(15,23,42,0.08);color:#0f172a;font-size:22px;line-height:1;text-decoration:none;}',
+      '.mkdp-static-lightbox-close:hover{background:rgba(15,23,42,0.16);}',
+      '.mkdp-static-lightbox .mkdp-static-mermaid-image,.mkdp-static-lightbox .mkdp-static-mermaid-svg{width:auto;max-width:min(92vw, 1700px);height:auto;max-height:84vh;cursor:default;}'
+    ]
+    var seenStyleTexts = new Set()
     var styleNodes = Array.from(document.querySelectorAll('style'))
     styleNodes.forEach(function (node) {
-      styles.push(String(node.textContent || ''))
+      var cssText = stripUnusedStandaloneCss(stripFontFaceRules(node.textContent || ''))
+      var normalizedCss = normalizeCssForDedup(cssText)
+      if (!shouldKeepInlineStyle(cssText, pageClone) || seenStyleTexts.has(normalizedCss)) {
+        return
+      }
+      seenStyleTexts.add(normalizedCss)
+      styles.push(cssText)
     })
 
     var styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"][href]'))
@@ -197,11 +260,19 @@
         warnings.push('样式链接解析失败: ' + href)
         continue
       }
+      if (!shouldInlineStylesheet(new URL(absUrl).pathname, pageClone)) {
+        continue
+      }
       var cssText = await fetchAssetAsText(absUrl, warnings)
       if (!cssText) {
         continue
       }
-      var inlinedCss = await inlineCssUrls(cssText, absUrl, warnings)
+      var inlinedCss = await inlineCssUrls(stripUnusedStandaloneCss(stripFontFaceRules(cssText)), absUrl, warnings)
+      var normalizedInlinedCss = normalizeCssForDedup(inlinedCss)
+      if (!shouldKeepInlineStyle(inlinedCss, pageClone) || seenStyleTexts.has(normalizedInlinedCss)) {
+        continue
+      }
+      seenStyleTexts.add(normalizedInlinedCss)
       styles.push(inlinedCss)
     }
 
@@ -263,6 +334,150 @@
     }
   }
 
+  function svgToDataUrl(svgText) {
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText)
+  }
+
+  function cleanupStaticSvg(svg) {
+    if (!svg) {
+      return svg
+    }
+
+    svg.removeAttribute('data-mkdp-preview-bound')
+    svg.removeAttribute('tabindex')
+    svg.removeAttribute('role')
+    svg.removeAttribute('aria-label')
+    svg.classList.remove('mkdp-previewable')
+    svg.classList.add('mkdp-static-mermaid-svg')
+
+    Array.from(svg.querySelectorAll('[data-mkdp-preview-bound], [tabindex], [role="button"]')).forEach(function (node) {
+      node.removeAttribute('data-mkdp-preview-bound')
+      node.removeAttribute('tabindex')
+      if (node.getAttribute('role') === 'button') {
+        node.removeAttribute('role')
+      }
+      if (node.getAttribute('aria-label') === '打开预览') {
+        node.removeAttribute('aria-label')
+      }
+    })
+
+    return svg
+  }
+
+  function resolveSvgDimensions(svg) {
+    var viewBox = svg.getAttribute('viewBox')
+    var width = svg.getAttribute('width')
+    var height = svg.getAttribute('height')
+    if ((!width || width.indexOf('%') !== -1 || !height || height.indexOf('%') !== -1) && viewBox) {
+      var parts = viewBox.trim().split(/\s+/)
+      if (parts.length === 4) {
+        width = parts[2]
+        height = parts[3]
+      }
+    }
+
+    return {
+      width: width,
+      height: height
+    }
+  }
+
+  function buildStaticLightbox(id, contentNode) {
+    var overlay = document.createElement('div')
+    overlay.id = id
+    overlay.className = 'mkdp-static-lightbox'
+
+    var stage = document.createElement('div')
+    stage.className = 'mkdp-static-lightbox-stage'
+
+    var close = document.createElement('a')
+    close.className = 'mkdp-static-lightbox-close'
+    close.href = '#'
+    close.setAttribute('aria-label', '关闭放大视图')
+    close.textContent = '×'
+
+    stage.appendChild(close)
+    stage.appendChild(contentNode)
+    overlay.appendChild(stage)
+    return overlay
+  }
+
+  function convertMermaidSvgsToImages(root) {
+    var mermaidNodes = Array.from(root.querySelectorAll('.mermaid'))
+    mermaidNodes.forEach(function (node, index) {
+      var svg = node.querySelector('svg')
+      if (!svg) {
+        return
+      }
+
+      var serializer = typeof XMLSerializer !== 'undefined' ? new XMLSerializer() : null
+      if (!serializer) {
+        return
+      }
+
+      var clonedSvg = cleanupStaticSvg(svg.cloneNode(true))
+      if (!clonedSvg.getAttribute('xmlns')) {
+        clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+      }
+      if (!clonedSvg.getAttribute('xmlns:xlink')) {
+        clonedSvg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+      }
+
+      var dimensions = resolveSvgDimensions(clonedSvg)
+      var width = dimensions.width
+      var height = dimensions.height
+
+      var svgMarkup = serializer.serializeToString(clonedSvg)
+      var dataUrl = svgToDataUrl(svgMarkup)
+      var link = document.createElement('a')
+      link.className = 'mkdp-static-image-link'
+      var lightboxId = 'mkdp-static-lightbox-mermaid-' + (index + 1)
+      link.href = '#' + lightboxId
+      link.setAttribute('aria-label', '打开 Mermaid 图放大视图')
+      var overlayContent = null
+
+      if (clonedSvg.querySelector('foreignObject')) {
+        clonedSvg.style.display = 'block'
+        clonedSvg.style.width = '100%'
+        clonedSvg.style.height = 'auto'
+        if (width) {
+          clonedSvg.setAttribute('width', width)
+        }
+        if (height) {
+          clonedSvg.setAttribute('height', height)
+        }
+        link.appendChild(clonedSvg)
+        overlayContent = cleanupStaticSvg(clonedSvg.cloneNode(true))
+      } else {
+        var img = document.createElement('img')
+        img.className = 'mkdp-static-mermaid-image'
+        img.src = dataUrl
+        img.alt = node.getAttribute('aria-label') || ('Mermaid diagram ' + (index + 1))
+        img.setAttribute('loading', 'eager')
+        img.setAttribute('decoding', 'sync')
+        if (width) {
+          img.setAttribute('width', width)
+        }
+        if (height) {
+          img.setAttribute('height', height)
+        }
+        link.appendChild(img)
+        var lightboxImg = img.cloneNode(true)
+        lightboxImg.removeAttribute('loading')
+        lightboxImg.removeAttribute('decoding')
+        overlayContent = lightboxImg
+      }
+
+      node.textContent = ''
+      node.removeAttribute('data-processed')
+      node.removeAttribute('data-mkdp-mermaid-source')
+      node.appendChild(link)
+      if (overlayContent) {
+        node.appendChild(buildStaticLightbox(lightboxId, overlayContent))
+      }
+    })
+  }
+
   function syncSelectValue(liveSelect, cloneSelect) {
     if (!liveSelect || !cloneSelect) {
       return
@@ -276,6 +491,41 @@
         option.removeAttribute('selected')
       }
     })
+  }
+
+  function removeNode(node) {
+    if (node && node.parentNode) {
+      node.parentNode.removeChild(node)
+    }
+  }
+
+  function stripStandaloneControls(clone) {
+    Array.from(clone.querySelectorAll('#' + EXPORT_SLOT_ID + ', #' + EXPORT_BUTTON_ID + ', #mkdp-export-shortcut-tip')).forEach(removeNode)
+
+    Array.from(clone.querySelectorAll('#theme-mode-select, #mermaid-theme-preset')).forEach(function (select) {
+      var control = select.closest('.mkdp-page-control')
+      if (control) {
+        removeNode(control)
+      } else {
+        removeNode(select)
+      }
+    })
+
+    Array.from(clone.querySelectorAll('#toc-mobile-open-btn, #toc-close-btn, #toc-drawer-backdrop')).forEach(removeNode)
+    Array.from(clone.querySelectorAll('.toc-collapse-btn')).forEach(removeNode)
+    Array.from(clone.querySelectorAll('.toc-item.has-children')).forEach(function (item) {
+      item.classList.add('is-expanded')
+    })
+
+    var toolbar = clone.querySelector('.mkdp-page-toolbar')
+    if (toolbar && !toolbar.textContent.trim() && !toolbar.querySelector('input, select, button, a')) {
+      removeNode(toolbar)
+    }
+
+    var headerActions = clone.querySelector('.mkdp-header-actions')
+    if (headerActions && !headerActions.textContent.trim() && !headerActions.querySelector('input, select, button, a')) {
+      removeNode(headerActions)
+    }
   }
 
   function clonePageRoot() {
@@ -309,6 +559,8 @@
       clone.querySelector('#mermaid-theme-preset')
     )
 
+    stripStandaloneControls(clone)
+
     return clone
   }
 
@@ -316,8 +568,8 @@
     var warnings = []
     var pageClone = clonePageRoot()
     await inlineElementImages(pageClone, warnings)
-    var inlineStyles = await collectInlineStyles(warnings)
-    var inlineScripts = await collectInlineScripts(pageClone, warnings)
+    convertMermaidSvgsToImages(pageClone)
+    var inlineStyles = await collectInlineStyles(pageClone, warnings)
     var title = escapeHtml(document.title || 'Markdown Preview')
     var html = [
       '<!DOCTYPE html>',
@@ -330,7 +582,6 @@
       '</head>',
       '<body>',
       pageClone.outerHTML,
-      inlineScripts,
       '</body>',
       '</html>'
     ].join('\n')
@@ -462,25 +713,6 @@
     if (button.parentNode !== host) {
       host.appendChild(button)
     }
-  }
-
-  async function collectInlineScripts(pageClone, warnings) {
-    var scripts = []
-    var runtimeUrl = toAbsoluteUrl('/_static/standalone-runtime.js', window.location.href)
-    var runtimeSource = await fetchAssetAsText(runtimeUrl, warnings)
-    if (runtimeSource) {
-      scripts.push('<script>\n' + escapeInlineScript(runtimeSource) + '\n</script>')
-    }
-
-    if (pageClone.querySelector('.mermaid')) {
-      var mermaidUrl = toAbsoluteUrl('/_static/mermaid.min.js', window.location.href)
-      var mermaidSource = await fetchAssetAsText(mermaidUrl, warnings)
-      if (mermaidSource) {
-        scripts.unshift('<script>\n' + escapeInlineScript(mermaidSource) + '\n</script>')
-      }
-    }
-
-    return scripts.join('\n')
   }
 
   function watchHeaderButton() {
