@@ -7,6 +7,8 @@
   var assetTextCache = new Map()
   var currentSocket = null
   var isExporting = false
+  var previewReadySequence = 0
+  var previewReadyTimer = null
 
   function escapeHtml(text) {
     return String(text || '')
@@ -83,6 +85,38 @@
         return replacement
       })
     })
+  }
+
+  function markPreviewDirty() {
+    previewReadySequence += 1
+    if (previewReadyTimer) {
+      clearTimeout(previewReadyTimer)
+    }
+    previewReadyTimer = null
+  }
+
+  function markPreviewReady() {
+    var nextSequence = previewReadySequence + 1
+    previewReadySequence = nextSequence
+    if (previewReadyTimer) {
+      clearTimeout(previewReadyTimer)
+    }
+    previewReadyTimer = setTimeout(function () {
+      window.__mkdpPreviewState = {
+        status: 'ready',
+        sequence: nextSequence,
+        updatedAt: Date.now()
+      }
+      previewReadyTimer = null
+    }, 120)
+  }
+
+  function markPreviewError(error) {
+    window.__mkdpPreviewState = {
+      status: 'error',
+      message: error && error.message ? error.message : String(error || 'preview render failed'),
+      updatedAt: Date.now()
+    }
   }
 
   async function fetchAssetAsDataUrl(assetUrl, warnings) {
@@ -334,6 +368,30 @@
     }
   }
 
+  function inlineCanvasSnapshots(liveRoot, cloneRoot, warnings) {
+    var liveCanvases = Array.from((liveRoot || document).querySelectorAll('canvas'))
+    var cloneCanvases = Array.from((cloneRoot || document).querySelectorAll('canvas'))
+    var total = Math.min(liveCanvases.length, cloneCanvases.length)
+
+    for (var i = 0; i < total; i += 1) {
+      var liveCanvas = liveCanvases[i]
+      var cloneCanvas = cloneCanvases[i]
+      try {
+        var dataUrl = liveCanvas.toDataURL('image/png')
+        var replacement = document.createElement('img')
+        replacement.src = dataUrl
+        replacement.alt = cloneCanvas.getAttribute('aria-label') || liveCanvas.getAttribute('aria-label') || 'Canvas snapshot'
+        replacement.className = cloneCanvas.className || liveCanvas.className || ''
+        replacement.style.cssText = cloneCanvas.style.cssText || liveCanvas.style.cssText || ''
+        replacement.setAttribute('width', liveCanvas.width || cloneCanvas.getAttribute('width') || liveCanvas.clientWidth || 0)
+        replacement.setAttribute('height', liveCanvas.height || cloneCanvas.getAttribute('height') || liveCanvas.clientHeight || 0)
+        cloneCanvas.parentNode.replaceChild(replacement, cloneCanvas)
+      } catch (e) {
+        warnings.push('Canvas 内联失败: ' + (e.message || e))
+      }
+    }
+  }
+
   function svgToDataUrl(svgText) {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText)
   }
@@ -567,6 +625,7 @@
   async function buildStandaloneHtml() {
     var warnings = []
     var pageClone = clonePageRoot()
+    inlineCanvasSnapshots(document, pageClone, warnings)
     await inlineElementImages(pageClone, warnings)
     convertMermaidSvgsToImages(pageClone)
     var inlineStyles = await collectInlineStyles(pageClone, warnings)
@@ -749,6 +808,57 @@
     watchSocketBinding()
     watchHeaderButton()
     registerShortcut()
+    markPreviewReady()
+  }
+
+  function waitForPreviewReady(timeoutMs) {
+    var timeout = typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : 30000
+    var startedAt = Date.now()
+
+    return new Promise(function (resolve, reject) {
+      function check() {
+        var state = window.__mkdpPreviewState || {}
+        if (state.status === 'ready') {
+          resolve(state)
+          return
+        }
+        if (state.status === 'error') {
+          reject(new Error(state.message || 'preview render failed'))
+          return
+        }
+        if (Date.now() - startedAt >= timeout) {
+          reject(new Error('preview render timed out'))
+          return
+        }
+        window.setTimeout(check, 60)
+      }
+
+      check()
+    })
+  }
+
+  window.__mkdpExport = {
+    buildStandaloneHtml: buildStandaloneHtml,
+    runExport: runExport,
+    waitForPreviewReady: waitForPreviewReady
+  }
+  window.__mkdpPreviewState = {
+    status: 'booting',
+    updatedAt: Date.now()
+  }
+
+  if (typeof MutationObserver !== 'undefined') {
+    var renderObserver = new MutationObserver(function () {
+      markPreviewDirty()
+      markPreviewReady()
+    })
+
+    if (document.documentElement) {
+      renderObserver.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+      })
+    }
   }
 
   if (document.readyState === 'loading') {

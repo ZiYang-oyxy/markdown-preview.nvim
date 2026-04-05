@@ -304,6 +304,61 @@ When preview page is open, there is also a built-in `导出 HTML` button in the 
 The page shortcut `Ctrl/Cmd+Shift+E` triggers browser download export as well.
 Exported HTML is a lightweight static snapshot. It keeps the current rendered content and selected theme, but strips offline runtime features such as theme switches, Mermaid theme switches, image preview overlays, and other page-only controls from the exported file.
 
+### Local CLI Export
+
+You can also export Markdown to HTML locally without opening Neovim by reusing the same preview page and browser-side export pipeline.
+
+Install the root dependencies first so Playwright is available:
+
+```bash
+yarn install
+npx playwright install chromium
+```
+
+Export a file:
+
+```bash
+yarn export-html ./test/test.md
+yarn export-html ./test/test.md -o ./test/test.preview.html
+```
+
+Export from stdin:
+
+```bash
+cat README.md | yarn export-html - > README.preview.html
+```
+
+Useful options:
+
+```bash
+yarn export-html ./doc.md \
+  --theme dark \
+  --page-title '文档：${name}' \
+  --markdown-css ./custom/markdown.css \
+  --highlight-css ./custom/highlight.css \
+  --images-path ./assets
+```
+
+`--config <path>` accepts a JSON file with:
+
+```json
+{
+  "theme": "light",
+  "pageTitle": "「${name}」",
+  "markdownCss": "./custom/markdown.css",
+  "highlightCss": "./custom/highlight.css",
+  "imagesPath": "./assets",
+  "previewOptions": {
+    "disable_filename": 0,
+    "maid": {
+      "themePreset": "modern"
+    }
+  }
+}
+```
+
+The CLI launches a headless Chromium instance and exports from the real preview page, so most preview style and rendering changes are picked up automatically by the CLI as well.
+
 ### Custom Examples
 
 **Table of contents**
