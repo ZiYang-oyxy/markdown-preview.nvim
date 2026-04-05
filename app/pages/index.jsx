@@ -9,6 +9,7 @@ import footnote from 'markdown-it-footnote'
 import markdownItAnchor from 'markdown-it-anchor'
 import markdownItToc from 'markdown-it-toc-done-right'
 import markdownDeflist from 'markdown-it-deflist'
+import markdownItCitation from './markdown-it-citation'
 
 import mk from './katex'
 import chart from './chart'
@@ -21,7 +22,7 @@ import dot, { renderDot } from './dot'
 import blockUml from './blockPlantuml'
 import codeUml from './plantuml'
 import createMermaidConfig, { MERMAID_THEME_PRESETS, resolveThemePreset } from './mermaid-theme'
-import { bindPreviewInteractions, closePreviewInteractions } from './preview'
+import { bindPreviewInteractions, closePreviewInteractions, scrollToHashTarget } from './preview'
 import scrollToLine from './scroll'
 import { meta } from './meta';
 import markdownImSize from './markdown-it-imsize'
@@ -381,13 +382,8 @@ export default class PreviewPage extends React.Component {
 
   handleTocJump(event, id) {
     event.preventDefault()
-    const target = document.getElementById(id)
     this.setState({ activeTocId: id, isTocDrawerOpen: false })
-
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      window.history.replaceState(null, '', `#${id}`)
-    }
+    scrollToHashTarget(`#${id}`)
   }
 
   handleWindowKeydown(event) {
@@ -653,6 +649,7 @@ export default class PreviewPage extends React.Component {
         .use(taskLists)
         .use(markdownDeflist)
         .use(footnote)
+        .use(markdownItCitation)
         .use(image)
         .use(markdownImSize)
         .use(linenumbers)
