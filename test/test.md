@@ -211,3 +211,22 @@ erDiagram
     ORDER ||--|{ LINE-ITEM : contains
     CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
 ```
+
+## Anchor jump demo
+
+[跳到脚注段落](#footnote-demo)
+
+这里有一个脚注引用[^jump-demo]，点击后应滚动到文末定义。
+
+### Footnote demo
+
+手写内部链接也应支持：[跳回文档标题](#markdown-previewvim)
+
+[^jump-demo]: 这是脚注定义，点击返回箭头应回到正文引用位置。
+
+## Citation demo
+
+这里是数字引用样式：[1][2]，点击后应滚动到文末参考文献条目。
+
+[1] Markdown It. https://github.com/markdown-it/markdown-it  
+[2] markdown-preview.nvim. https://github.com/iamcco/markdown-preview.nvim

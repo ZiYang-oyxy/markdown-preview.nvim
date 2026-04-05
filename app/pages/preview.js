@@ -1,5 +1,6 @@
 const VIEWER_ID = 'mkdp-preview-viewer'
 const CLICK_CLOSE_THRESHOLD = 4
+const INTERNAL_HASH_BOUND = 'mkdpInternalHashBound'
 
 let viewerState = null
 
@@ -152,6 +153,38 @@ const closeViewer = () => {
   viewerState.content = null
   viewerState.activeSource = null
   document.body.classList.remove('mkdp-preview-open')
+}
+
+const decodeHashTarget = (hash) => {
+  if (!hash || hash.charAt(0) !== '#') {
+    return ''
+  }
+
+  try {
+    return decodeURIComponent(hash.slice(1))
+  } catch (_) {
+    return hash.slice(1)
+  }
+}
+
+export const scrollToHashTarget = (hash, behavior = 'smooth') => {
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    return null
+  }
+
+  const id = decodeHashTarget(hash)
+  if (!id) {
+    return null
+  }
+
+  const target = document.getElementById(id)
+  if (!target) {
+    return null
+  }
+
+  target.scrollIntoView({ behavior, block: 'start' })
+  window.history.replaceState(null, '', `#${id}`)
+  return target
 }
 
 const openViewer = (source, kind) => {
@@ -395,8 +428,41 @@ const bindPreviewNode = (node, kind) => {
   })
 }
 
+const bindInternalHashLinks = (root) => {
+  const markdownBody = root.querySelector && root.querySelector('.markdown-body')
+  if (!markdownBody || markdownBody.dataset[INTERNAL_HASH_BOUND] === 'true') {
+    return
+  }
+
+  markdownBody.dataset[INTERNAL_HASH_BOUND] = 'true'
+  markdownBody.addEventListener('click', (event) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return
+    }
+
+    const link = event.target.closest('a[href^="#"]')
+    if (!link || !markdownBody.contains(link)) {
+      return
+    }
+
+    if (!scrollToHashTarget(link.getAttribute('href'))) {
+      return
+    }
+
+    event.preventDefault()
+  })
+}
+
 export const bindPreviewInteractions = (root = document) => {
   ensureViewer()
+  bindInternalHashLinks(root)
 
   root.querySelectorAll('.markdown-body img').forEach((node) => {
     bindPreviewNode(node, 'image')
