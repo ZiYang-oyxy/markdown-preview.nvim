@@ -382,8 +382,11 @@ export default class PreviewPage extends React.Component {
 
   handleTocJump(event, id) {
     event.preventDefault()
-    this.setState({ activeTocId: id, isTocDrawerOpen: false })
-    scrollToHashTarget(`#${id}`)
+    this.setState({ activeTocId: id, isTocDrawerOpen: false }, () => {
+      window.requestAnimationFrame(() => {
+        scrollToHashTarget(`#${id}`)
+      })
+    })
   }
 
   handleWindowKeydown(event) {
