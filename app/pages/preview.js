@@ -208,6 +208,17 @@ export const scrollToHashTarget = (hash, behavior = 'smooth') => {
   }
 
   target.scrollIntoView({ behavior, block: 'start' })
+
+  const targetTop = target.getBoundingClientRect().top + window.pageYOffset
+  const desiredTop = Math.max(targetTop, 0)
+
+  if (Math.abs(window.pageYOffset - desiredTop) > 1) {
+    window.scrollTo({
+      top: desiredTop,
+      behavior
+    })
+  }
+
   window.history.replaceState(null, '', `#${target.id}`)
   return target
 }
