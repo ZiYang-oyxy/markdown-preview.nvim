@@ -359,6 +359,50 @@ yarn export-html ./doc.md \
 
 The CLI launches a headless Chromium instance and exports from the real preview page, so most preview style and rendering changes are picked up automatically by the CLI as well.
 
+### Local Preview Debug
+
+You can also launch the real preview page directly from the repository without opening Neovim.
+
+Open the default fixture (`test/demo.md`):
+
+```bash
+yarn preview-open
+```
+
+Open a specific file:
+
+```bash
+yarn preview-open ./test/test.md
+```
+
+The command prints the local preview URL, opens the browser, and keeps the preview server running until you stop it with `Ctrl+C`.
+
+### Playwright Self-Test
+
+Use the local preview page itself as the test target and run Playwright checks against the real browser rendering output.
+
+Run the default regression set:
+
+```bash
+yarn preview-test
+```
+
+Useful options:
+
+```bash
+# run only the demo fixture
+yarn preview-test --fixture demo
+
+# run only a specific case
+yarn preview-test --case demo-toc
+
+# run with a visible browser for local debugging
+yarn preview-test --headed
+```
+
+The test command writes a run summary to `test/artifacts/playwright/<timestamp>/summary.json`.
+On failure it also stores a screenshot, Playwright trace, browser log, and page snapshot in the same run directory for easier analysis.
+
 ### Custom Examples
 
 **Table of contents**
