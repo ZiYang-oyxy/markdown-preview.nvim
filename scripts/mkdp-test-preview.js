@@ -180,9 +180,9 @@ async function waitForHashTarget(page, expectedHash) {
   })
 }
 
-async function createPage(browser, origin) {
+async function createPage(browser, origin, viewport = VIEWPORT) {
   const context = await browser.newContext({
-    viewport: VIEWPORT
+    viewport
   })
   await context.tracing.start({
     screenshots: true,
@@ -437,13 +437,41 @@ const CASES = {
           timeout: 5000
         })
       }
+    },
+    {
+      id: 'test-mobile-toc-jump',
+      viewport: { width: 390, height: 844 },
+      async run({ page }) {
+        const tocOpenButton = page.locator('#toc-mobile-open-btn')
+        assert(await tocOpenButton.count(), 'mobile toc open button was not rendered')
+
+        await tocOpenButton.click()
+        await page.waitForSelector('#toc-panel.is-open', {
+          timeout: 5000
+        })
+
+        const tocLink = page.locator('#toc-nav .toc-link[href="#citation-demo"]').first()
+        assert(await tocLink.count(), 'mobile toc target was not rendered')
+
+        await tocLink.click()
+        await waitForHashTarget(page, '#citation-demo')
+
+        const scrollState = await page.evaluate(() => ({
+          y: window.pageYOffset,
+          drawerOpen: document.querySelector('#toc-panel') && document.querySelector('#toc-panel').classList.contains('is-open')
+        }))
+
+        assert(scrollState.y > 0, 'mobile toc jump did not move the page')
+        assert(scrollState.drawerOpen === false, 'mobile toc drawer did not close after jump')
+      }
     }
   ]
 }
 
 async function runCase({ browser, caseDef, fixtureName, origin, runDir }) {
   const startedAt = Date.now()
-  const { context, page, events } = await createPage(browser, origin)
+  const viewport = caseDef.viewport || VIEWPORT
+  const { context, page, events } = await createPage(browser, origin, viewport)
 
   try {
     await caseDef.run({ page, events })
