@@ -151,6 +151,7 @@ export default class PreviewPage extends React.Component {
     this.handleTocDrawerBackdrop = this.handleTocDrawerBackdrop.bind(this)
     this.handleTocToggle = this.handleTocToggle.bind(this)
     this.handleTocJump = this.handleTocJump.bind(this)
+    this.scheduleTocJump = this.scheduleTocJump.bind(this)
     this.updateTocItems = this.updateTocItems.bind(this)
     this.handleWindowKeydown = this.handleWindowKeydown.bind(this)
     this.handleWindowScroll = this.handleWindowScroll.bind(this)
@@ -383,9 +384,31 @@ export default class PreviewPage extends React.Component {
   handleTocJump(event, id) {
     event.preventDefault()
     this.setState({ activeTocId: id, isTocDrawerOpen: false }, () => {
-      window.requestAnimationFrame(() => {
-        scrollToHashTarget(`#${id}`)
-      })
+      this.scheduleTocJump(id)
+    })
+  }
+
+  scheduleTocJump(id, attemptsLeft = 8) {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      const main = document.querySelector('main')
+      const isDrawerLocked = Boolean(
+        main &&
+        (
+          main.classList.contains('toc-drawer-open') ||
+          window.getComputedStyle(main).overflow === 'hidden'
+        )
+      )
+
+      if (isDrawerLocked && attemptsLeft > 0) {
+        this.scheduleTocJump(id, attemptsLeft - 1)
+        return
+      }
+
+      scrollToHashTarget(`#${id}`)
     })
   }
 
