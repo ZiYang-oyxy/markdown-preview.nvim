@@ -167,23 +167,48 @@ const decodeHashTarget = (hash) => {
   }
 }
 
+const findHashTarget = (hash) => {
+  const rawId = hash && hash.charAt(0) === '#'
+    ? hash.slice(1)
+    : ''
+
+  if (!rawId) {
+    return null
+  }
+
+  const candidates = [rawId]
+  const decoded = decodeHashTarget(hash)
+  if (decoded && !candidates.includes(decoded)) {
+    candidates.push(decoded)
+  }
+
+  const encoded = encodeURIComponent(rawId)
+  if (encoded && !candidates.includes(encoded)) {
+    candidates.push(encoded)
+  }
+
+  for (let i = 0; i < candidates.length; i += 1) {
+    const target = document.getElementById(candidates[i])
+    if (target) {
+      return target
+    }
+  }
+
+  return null
+}
+
 export const scrollToHashTarget = (hash, behavior = 'smooth') => {
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     return null
   }
 
-  const id = decodeHashTarget(hash)
-  if (!id) {
-    return null
-  }
-
-  const target = document.getElementById(id)
+  const target = findHashTarget(hash)
   if (!target) {
     return null
   }
 
   target.scrollIntoView({ behavior, block: 'start' })
-  window.history.replaceState(null, '', `#${id}`)
+  window.history.replaceState(null, '', `#${target.id}`)
   return target
 }
 
