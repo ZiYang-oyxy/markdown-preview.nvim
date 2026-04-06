@@ -96,9 +96,9 @@ function syncRuntimeAssets() {
   copyTree(path.join(appDir, 'out'), distWebDir)
   copyTree(path.join(appDir, '_static'), distStaticDir)
 
-  const manifest = {
+  const generatedAt = new Date().toISOString()
+  const runtimeManifest = {
     version: 1,
-    generatedAt: new Date().toISOString(),
     web: {
       htmlRoot: '../dist/web',
       staticRoot: '../dist/static',
@@ -109,14 +109,14 @@ function syncRuntimeAssets() {
 
   fs.writeFileSync(path.join(distDir, 'asset-manifest.json'), `${JSON.stringify({
     version: 1,
-    generatedAt: manifest.generatedAt,
+    generatedAt,
     webRoot: 'web',
     staticRoot: 'static',
     indexHtml: 'web/index.html',
     notFoundHtml: 'web/404.html'
   }, null, 2)}\n`, 'utf8')
 
-  writeRuntimeAssetManifest(appDir, manifest)
+  writeRuntimeAssetManifest(appDir, runtimeManifest)
 }
 
 function main() {
