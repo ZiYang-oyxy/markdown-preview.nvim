@@ -1,8 +1,9 @@
-// change cwd to ./app
-if (!/^(\/|C:\\)snapshot/.test(__dirname)) {
-  process.chdir(__dirname)
-} else {
-  process.chdir(process.execPath.replace(/(markdown-preview.nvim.*?app).+?$/, '$1'))
-}
+const { resolveRuntimeAssetLayout } = require("./runtime-asset-layout");
 
-require('./lib/app')
+const assetLayout = resolveRuntimeAssetLayout({
+  appDir: __dirname,
+});
+
+process.chdir(assetLayout.appRoot);
+
+require("./lib/app");
