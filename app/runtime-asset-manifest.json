@@ -1,9 +1,9 @@
 {
   "version": 1,
   "web": {
-    "htmlRoot": "out",
-    "staticRoot": "_static",
-    "indexHtml": "out/index.html",
-    "notFoundHtml": "out/404.html"
+    "htmlRoot": "../dist/web",
+    "staticRoot": "../dist/static",
+    "indexHtml": "../dist/web/index.html",
+    "notFoundHtml": "../dist/web/404.html"
   }
 }
