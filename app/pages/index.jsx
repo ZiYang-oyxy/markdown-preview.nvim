@@ -520,7 +520,15 @@ export default class PreviewPage extends React.Component {
     tocNav.scrollTop = desiredScrollTop
   }
 
-  startSocket(bufnr) {
+  getBrowsePath() {
+    if (typeof window === 'undefined') {
+      return ''
+    }
+
+    return new URL(window.location.href).searchParams.get('browsePath') || ''
+  }
+
+  startSocket(bufnr, browsePath = this.getBrowsePath()) {
     if (this.bufnr === bufnr) {
       return;
     }
@@ -529,11 +537,16 @@ export default class PreviewPage extends React.Component {
     // Close the previous socket
     const tmpSocket = window.socket
 
-    window.history.replaceState(null, '', `/${bufnr}`)
+    const search = browsePath
+      ? `?browsePath=${encodeURIComponent(browsePath)}`
+      : ''
+
+    window.history.replaceState(null, '', `/page/${bufnr}${search}`)
 
     const socket = io({
       query: {
-        bufnr
+        bufnr,
+        ...(browsePath ? { browsePath } : {})
       }
     })
 
@@ -557,7 +570,9 @@ export default class PreviewPage extends React.Component {
   }
 
   componentDidMount() {
-    this.startSocket(parseFloat(window.location.pathname.split('/')[2]))
+    const pathTokens = window.location.pathname.split('/').filter(Boolean)
+    const bufnr = parseFloat(pathTokens[pathTokens.length - 1] || '1')
+    this.startSocket(bufnr, this.getBrowsePath())
     window.addEventListener('keydown', this.handleWindowKeydown)
     window.addEventListener('scroll', this.handleWindowScroll, { passive: true })
   }
@@ -616,7 +631,7 @@ export default class PreviewPage extends React.Component {
   }
 
   onChangeBufnr(bufnr) {
-    this.startSocket(bufnr)
+    this.startSocket(bufnr, this.getBrowsePath())
   }
 
   onRefreshContent({

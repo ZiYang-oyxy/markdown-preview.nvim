@@ -377,6 +377,33 @@ yarn preview-open ./test/test.md
 
 The command prints the local preview URL, opens the browser, and keeps the preview server running until you stop it with `Ctrl+C`.
 
+### Local Browse Mode
+
+You can launch a directory-scoped web file browser that renders Markdown files with the same preview page runtime.
+
+Browse the current directory:
+
+```bash
+yarn browse
+```
+
+Browse a specific directory:
+
+```bash
+yarn browse ./docs
+```
+
+Useful options:
+
+```bash
+yarn browse ./docs \
+  --theme dark \
+  --page-title '文档浏览：${name}' \
+  --images-path ./docs/assets
+```
+
+Browse mode is read-only. Markdown files open in the live preview pane, text-like files fall back to inline text preview, and binary files fall back to download links.
+
 ### Playwright Self-Test
 
 Use the local preview page itself as the test target and run Playwright checks against the real browser rendering output.

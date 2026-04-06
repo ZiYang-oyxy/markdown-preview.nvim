@@ -93,6 +93,39 @@ async function createStandalonePreviewSession(cliConfig = {}, runtimeOptions = {
   }
 }
 
+async function createStandaloneBrowseSession(cliConfig = {}, runtimeOptions = {}) {
+  const fileConfig = await loadConfig(cliConfig.config || '')
+  const merged = mergeConfig(cliConfig, fileConfig)
+  const defaultRoot = runtimeOptions.defaultRoot || process.cwd()
+  const browseRoot = path.resolve(cliConfig.root || defaultRoot)
+  const name = path.basename(browseRoot) || 'markdown-preview'
+
+  const server = await startStandalonePreviewServer({
+    cwd: process.cwd(),
+    fileDir: browseRoot,
+    imagesPath: merged.imagesPath,
+    markdownCss: merged.markdownCss,
+    highlightCss: merged.highlightCss,
+    pageTitle: merged.pageTitle,
+    previewOptions: merged.previewOptions,
+    theme: merged.theme,
+    name,
+    browseRoot,
+    contentLines: [
+      '# Browse mode',
+      '',
+      'Select a Markdown file from the left pane.'
+    ]
+  })
+
+  return {
+    browseRoot,
+    merged,
+    origin: server.origin,
+    close: () => server.close()
+  }
+}
+
 async function waitForPreviewReady(page, timeoutMs = 30000) {
   await page.waitForFunction(() => {
     const exportApi = window.__mkdpExport
@@ -121,6 +154,7 @@ async function openStandalonePreviewPage(page, origin, options = {}) {
 
 module.exports = {
   COMMON_OPTION_HELP,
+  createStandaloneBrowseSession,
   createStandalonePreviewSession,
   loadConfig,
   mergeConfig,
