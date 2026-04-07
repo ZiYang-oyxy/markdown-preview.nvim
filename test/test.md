@@ -229,4 +229,4 @@ erDiagram
 这里是数字引用样式：[1][2]，点击后应滚动到文末参考文献条目。
 
 [1] Markdown It. https://github.com/markdown-it/markdown-it  
-[2] markdown-preview.nvim. https://github.com/iamcco/markdown-preview.nvim
+[2] markdown-preview. https://github.com/ZiYang-oyxy/markdown-preview

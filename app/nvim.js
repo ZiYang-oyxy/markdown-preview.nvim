@@ -1,7 +1,7 @@
 const attach = require('./lib/attach').default
 const logger = require('./lib/util/logger')('app/nvim')
 
-const MSG_PREFIX = '[markdown-preview.nvim]'
+const MSG_PREFIX = '[markdown-preview]'
 
 const plugin = attach({
   reader: process.stdin,
