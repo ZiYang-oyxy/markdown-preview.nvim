@@ -1,648 +1,385 @@
-<h1 align="center"> ✨ Markdown Preview for (Neo)vim ✨ </h1>
+# markdown-preview
 
-> Powered by ❤️
+[English](./README.md) | [简体中文](./README_zh.md)
 
-### Introduction
+`markdown-preview` is a Markdown preview and export toolbox.
 
-> It only works on Vim >= 8.1 and Neovim
+It gives you one local runtime with multiple entrypoints:
 
-Preview Markdown in your modern browser with synchronised scrolling and flexible configuration.
+- CLI tools for browser preview, standalone HTML export, directory browsing, and Playwright validation
+- a browser preview page with live rendering, TOC navigation, theme controls, and export actions
+- an optional Vim/Neovim integration that reuses the same runtime instead of being the product center
 
-Main features:
+![Markdown preview demo](https://user-images.githubusercontent.com/5492542/47603494-28e90000-da1f-11e8-9079-30646e551e7a.gif)
 
-- Cross platform (MacOS/Linux/Windows)
-- Synchronised scrolling
-- Fast asynchronous updates
-- [KaTeX](https://github.com/Khan/KaTeX) for typesetting of math
-- [PlantUML](https://github.com/plantuml/plantuml)
-- [Mermaid](https://github.com/knsv/mermaid)
-- [Chart.js](https://github.com/chartjs/Chart.js)
-- [js-sequence-diagrams](https://github.com/bramp/js-sequence-diagrams)
-- [Flowchart](https://github.com/adrai/flowchart.js)
-- [dot](https://github.com/mdaines/viz.js)
-- [Table of contents](https://github.com/nagaozen/markdown-it-toc-done-right)
-- Emojis
-- Task lists
-- Local images
-- Flexible configuration
+## Quick Overview
 
-**Note** the plugin `mathjax-support-for-mkdp` is not needed for typesetting math.
+- Live browser preview for Markdown content.
+- Standalone HTML export with inlined assets.
+- Directory browse mode for Markdown-heavy workspaces.
+- Playwright-based preview verification for renderer and UI changes.
+- Optional Vim/Neovim commands for people who want the toolbox inside the editor.
+- Rich rendering support for KaTeX, PlantUML, Mermaid, Chart.js, flowchart.js, Graphviz/dot, js-sequence-diagrams, task lists, emoji, footnotes, definition lists, citations, TOC, and local images.
 
-![animation of Markdown Preview with its own README.md](https://user-images.githubusercontent.com/5492542/47603494-28e90000-da1f-11e8-9079-30646e551e7a.gif)
+## Architecture
 
-### Installation & Usage
-
-Install with [vim-plug](https://github.com/junegunn/vim-plug):
-
-```vim
-" If you don't have nodejs and yarn
-" use pre build, add 'vim-plug' to the filetype list so vim-plug can update this plugin
-" see: https://github.com/iamcco/markdown-preview.nvim/issues/50
-Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
-
-
-" If you have nodejs
-Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' }
+```mermaid
+flowchart LR
+  CLI["CLI tools<br/>preview-open / export-html / browse / preview-test"] --> Runtime["markdown-preview runtime"]
+  Editor["Vim / Neovim integration"] --> Runtime
+  Runtime --> Server["HTTP + Socket.IO server"]
+  Server --> Browser["Preview page"]
+  Browser --> Export["Standalone HTML export"]
 ```
 
-Or install with [dein](https://github.com/Shougo/dein.vim):
+The runtime resolves its web assets from `app/runtime-asset-manifest.json`, which currently points at `dist/web` and `dist/static`.
 
-```vim
-call dein#add('iamcco/markdown-preview.nvim', {'on_ft': ['markdown', 'pandoc.markdown', 'rmd'],
-					\ 'build': 'sh -c "cd app && npx --yes yarn install"' })
-```
+## Install The Toolbox
 
-Or with [minpac](https://github.com/k-takata/minpac):
-
-```vim
-call minpac#add('iamcco/markdown-preview.nvim', {'do': 'packloadall! | call mkdp#util#install()'})
-```
-
-Or with [Vundle](https://github.com/vundlevim/vundle.vim):
-
-Place this in your `.vimrc` or `init.vim`,
-```vim
-Plugin 'iamcco/markdown-preview.nvim'
-```
-... then run the following in Vim (to complete the `Plugin` installation):
-```vim
-:source %
-:PluginInstall
-:call mkdp#util#install()
-```
-Or with [lazy.nvim](https://github.com/folke/lazy.nvim):
-
-Add this in your `init.lua or plugins.lua`
-
-```lua
--- install without yarn or npm
-{
-    "iamcco/markdown-preview.nvim",
-    cmd = {
-      "MarkdownPreviewToggle",
-      "MarkdownPreview",
-      "MarkdownPreviewStop",
-      "MarkdownPreviewExport",
-      "MarkdownPreviewExportFile"
-    },
-    ft = { "markdown" },
-    build = function() vim.fn["mkdp#util#install"]() end,
-}
-
--- install with yarn or npm
-{
-  "iamcco/markdown-preview.nvim",
-  cmd = {
-    "MarkdownPreviewToggle",
-    "MarkdownPreview",
-    "MarkdownPreviewStop",
-    "MarkdownPreviewExport",
-    "MarkdownPreviewExportFile"
-  },
-  build = "cd app && yarn install",
-  init = function()
-    vim.g.mkdp_filetypes = { "markdown" }
-  end,
-  ft = { "markdown" },
-},
-
-```
-Or with [Packer.nvim](https://github.com/wbthomason/packer.nvim):
-
-Add this in your `init.lua or plugins.lua`
-
-```lua
--- install without yarn or npm
-use({
-    "iamcco/markdown-preview.nvim",
-    run = function() vim.fn["mkdp#util#install"]() end,
-})
-
-use({ "iamcco/markdown-preview.nvim", run = "cd app && npm install", setup = function() vim.g.mkdp_filetypes = { "markdown" } end, ft = { "markdown" }, })
-```
-
-Or by hand:
-
-```vim
-use {'iamcco/markdown-preview.nvim'}
-```
-
-add plugin to the `~/.local/share/nvim/site/pack/packer/start/` directory:
-
-```vim
-cd ~/.local/share/nvim/site/pack/packer/start/
-git clone https://github.com/iamcco/markdown-preview.nvim.git
-cd markdown-preview.nvim
-npx --yes yarn install
-npx --yes yarn build
-```
-
-Please make sure that you have installed `node.js` and `yarn`.
-Open `nvim` and run `:PackerInstall` to make it workable
-
-### MarkdownPreview Config:
-
-```vim
-" set to 1, nvim will open the preview window after entering the Markdown buffer
-" default: 0
-let g:mkdp_auto_start = 0
-
-" set to 1, the nvim will auto close current preview window when changing
-" from Markdown buffer to another buffer
-" default: 1
-let g:mkdp_auto_close = 1
-
-" set to 1, Vim will refresh Markdown when saving the buffer or
-" when leaving insert mode. Default 0 is auto-refresh Markdown as you edit or
-" move the cursor
-" default: 0
-let g:mkdp_refresh_slow = 0
-
-" set to 1, the MarkdownPreview command can be used for all files,
-" by default it can be use in Markdown files only
-" default: 0
-let g:mkdp_command_for_global = 0
-
-" set to 1, the preview server is available to others in your network.
-" By default, the server listens on localhost (127.0.0.1)
-" default: 0
-let g:mkdp_open_to_the_world = 0
-
-" use custom IP to open preview page.
-" Useful when you work in remote Vim and preview on local browser.
-" For more details see: https://github.com/iamcco/markdown-preview.nvim/pull/9
-" default empty
-let g:mkdp_open_ip = ''
-
-" specify browser to open preview page
-" for path with space
-" valid: `/path/with\ space/xxx`
-" invalid: `/path/with\\ space/xxx`
-" default: ''
-let g:mkdp_browser = ''
-
-" set to 1, echo preview page URL in command line when opening preview page
-" default is 0
-let g:mkdp_echo_preview_url = 0
-
-" a custom Vim function name to open preview page
-" this function will receive URL as param
-" default is empty
-let g:mkdp_browserfunc = ''
-
-" options for Markdown rendering
-" mkit: markdown-it options for rendering
-" katex: KaTeX options for math
-" uml: markdown-it-plantuml options
-" maid: mermaid options
-"   themePreset: 'modern', 'minimal', 'warm' or 'forest', default is 'modern'
-" disable_sync_scroll: whether to disable sync scroll, default 0
-" sync_scroll_type: 'middle', 'top' or 'relative', default value is 'middle'
-"   middle: means the cursor position is always at the middle of the preview page
-"   top: means the Vim top viewport always shows up at the top of the preview page
-"   relative: means the cursor position is always at relative positon of the preview page
-" hide_yaml_meta: whether to hide YAML metadata, default is 1
-" sequence_diagrams: js-sequence-diagrams options
-" content_editable: if enable content editable for preview page, default: v:false
-" disable_filename: if disable filename header for preview page, default: 0
-let g:mkdp_preview_options = {
-    \ 'mkit': {},
-    \ 'katex': {},
-    \ 'uml': {},
-    \ 'maid': {},
-    \ 'disable_sync_scroll': 0,
-    \ 'sync_scroll_type': 'middle',
-    \ 'hide_yaml_meta': 1,
-    \ 'sequence_diagrams': {},
-    \ 'flowchart_diagrams': {},
-    \ 'content_editable': v:false,
-    \ 'disable_filename': 0,
-    \ 'toc': {}
-    \ }
-
-" Example: select a built-in Mermaid theme preset
-let g:mkdp_preview_options = {
-    \ 'maid': {
-    \   'themePreset': 'forest'
-    \ }
-    \ }
-
-" use a custom Markdown style. Must be an absolute path
-" like '/Users/username/markdown.css' or expand('~/markdown.css')
-let g:mkdp_markdown_css = ''
-
-" use a custom highlight style. Must be an absolute path
-" like '/Users/username/highlight.css' or expand('~/highlight.css')
-let g:mkdp_highlight_css = ''
-
-" use a custom port to start server or empty for random
-let g:mkdp_port = ''
-
-" preview page title
-" ${name} will be replace with the file name
-let g:mkdp_page_title = '「${name}」'
-
-" use a custom location for images
-let g:mkdp_images_path = /home/user/.markdown_images
-
-" recognized filetypes
-" these filetypes will have MarkdownPreview... commands
-let g:mkdp_filetypes = ['markdown']
-
-" set default theme (dark or light)
-" By default the theme is defined according to the preferences of the system
-let g:mkdp_theme = 'dark'
-
-" combine preview window
-" default: 0
-" if enable it will reuse previous opened preview window when you preview markdown file.
-" ensure to set let g:mkdp_auto_close = 0 if you have enable this option
-let g:mkdp_combine_preview = 0
-
-" auto refetch combine preview contents when change markdown buffer
-" only when g:mkdp_combine_preview is 1
-let g:mkdp_combine_preview_auto_refresh = 1
-```
-
-Mappings:
-
-```vim
-" normal/insert
-<Plug>MarkdownPreview
-<Plug>MarkdownPreviewStop
-<Plug>MarkdownPreviewToggle
-<Plug>MarkdownPreviewExport
-<Plug>MarkdownPreviewExportFile
-
-" example
-nmap <C-s> <Plug>MarkdownPreview
-nmap <M-s> <Plug>MarkdownPreviewStop
-nmap <C-p> <Plug>MarkdownPreviewToggle
-
-" default mapping (built-in)
-nmap <leader>me <Plug>MarkdownPreviewExport
-```
-
-Commands:
-
-```vim
-" Start the preview
-:MarkdownPreview
-
-" Stop the preview"
-:MarkdownPreviewStop
-
-" Export current preview page to a self-contained static html (browser download)
-:MarkdownPreviewExport
-
-" Export current preview page to a self-contained static html file path
-" default path: current_file.preview.html
-:MarkdownPreviewExportFile [output_path]
-```
-
-When preview page is open, there is also a built-in `导出 HTML` button in the page header.
-The page shortcut `Ctrl/Cmd+Shift+E` triggers browser download export as well.
-Exported HTML is a lightweight static snapshot. It keeps the current rendered content and selected theme, but strips offline runtime features such as theme switches, Mermaid theme switches, image preview overlays, and other page-only controls from the exported file.
-
-### Local CLI Export
-
-You can also export Markdown to HTML locally without opening Neovim by reusing the same preview page and browser-side export pipeline.
-
-Install the root dependencies first so Playwright is available:
+Clone the repository and install the root dependencies:
 
 ```bash
+git clone https://github.com/ZiYang-oyxy/markdown-preview.git
+cd markdown-preview
 yarn install
+```
+
+If you want to use the Playwright-based commands such as `preview-test` or the standalone HTML exporter on a fresh machine, install Chromium as well:
+
+```bash
 npx playwright install chromium
 ```
 
-Export a file:
+This is the default installation path for the toolbox itself.
+
+## Use The Toolbox
+
+### Open a local preview page
 
 ```bash
-yarn export-html ./test/test.md
-yarn export-html ./test/test.md -o ./test/test.preview.html
+yarn preview-open -- test/demo.md
 ```
 
-Export from stdin:
+This starts the local preview runtime, opens `/page/1` in your browser, and keeps the server alive until you stop it.
+
+### Export standalone HTML
 
 ```bash
-cat README.md | yarn export-html - > README.preview.html
+yarn export-html -- test/demo.md -o ./demo.preview.html
 ```
 
-Useful options:
+The exporter launches a headless Chromium page, waits for the preview to finish rendering, then writes a self-contained HTML file with inlined assets.
+
+### Browse a workspace
 
 ```bash
-yarn export-html ./doc.md \
-  --theme dark \
-  --page-title '文档：${name}' \
-  --markdown-css ./custom/markdown.css \
-  --highlight-css ./custom/highlight.css \
-  --images-path ./assets
+yarn browse -- .
 ```
 
-`--config <path>` accepts a JSON file with:
+Browse mode gives you a local file tree and opens Markdown files in the same preview runtime. Non-Markdown files fall back to text preview or download mode.
+
+### Validate the preview with Playwright
+
+```bash
+yarn preview-test -- --fixture all
+```
+
+This runs browser-level preview checks and writes artifacts on failure.
+
+### Shared CLI config
+
+`preview-open`, `export-html`, and `browse` accept a JSON config file:
 
 ```json
 {
-  "theme": "light",
+  "theme": "dark",
   "pageTitle": "「${name}」",
-  "markdownCss": "./custom/markdown.css",
-  "highlightCss": "./custom/highlight.css",
-  "imagesPath": "./assets",
+  "markdownCss": "/absolute/path/to/markdown.css",
+  "highlightCss": "/absolute/path/to/highlight.css",
+  "imagesPath": "/absolute/path/to/images",
   "previewOptions": {
-    "disable_filename": 0,
     "maid": {
-      "themePreset": "modern"
+      "themePreset": "warm"
+    },
+    "disable_filename": 0,
+    "toc": {
+      "listType": "ul"
     }
   }
 }
 ```
 
-The CLI launches a headless Chromium instance and exports from the real preview page, so most preview style and rendering changes are picked up automatically by the CLI as well.
-
-### Local Preview Debug
-
-You can also launch the real preview page directly from the repository without opening Neovim.
-
-Open the default fixture (`test/demo.md`):
+Example:
 
 ```bash
-yarn preview-open
+yarn export-html -- test/demo.md --config ./mkdp.config.json
 ```
 
-Open a specific file:
+## Browser Preview Capabilities
+
+The current preview page is much more than a plain Markdown renderer. It includes:
+
+- light/dark theme switching from the page toolbar
+- Mermaid theme presets: `modern`, `minimal`, `warm`, `forest`
+- a responsive nested table of contents drawer
+- clickable image and SVG preview interactions
+- optional filename header hiding
+- optional content-editable preview body
+- an in-page export action plus `Ctrl/Cmd+Shift+E`
+
+See [`test/demo.md`](test/demo.md) for an end-to-end fixture that exercises the current renderer stack.
+
+## Vim / Neovim Integration
+
+The editor integration is one consumer of the toolbox runtime, not the product definition.
+
+### Install as a plugin integration
+
+If you want to use `markdown-preview` from Vim or Neovim, install the repository with your plugin manager and then choose one runtime path.
+
+#### Option A: prebuilt runtime download
+
+Use the built-in installer to download the runtime bundle into `app/bin`:
+
+```lua
+{
+  "ZiYang-oyxy/markdown-preview",
+  ft = { "markdown" },
+  cmd = {
+    "MarkdownPreview",
+    "MarkdownPreviewStop",
+    "MarkdownPreviewToggle",
+    "MarkdownPreviewExport",
+    "MarkdownPreviewExportFile",
+  },
+  build = function()
+    vim.fn["mkdp#util#install"]()
+  end,
+}
+```
+
+Equivalent `vim-plug` example:
+
+```vim
+Plug 'ZiYang-oyxy/markdown-preview', {
+      \ 'do': { -> mkdp#util#install() },
+      \ 'for': ['markdown', 'vim-plug']
+      \ }
+```
+
+#### Option B: Node runtime inside the plugin
+
+Install the app runtime dependencies under `app/`:
+
+```lua
+{
+  "ZiYang-oyxy/markdown-preview",
+  ft = { "markdown" },
+  cmd = {
+    "MarkdownPreview",
+    "MarkdownPreviewStop",
+    "MarkdownPreviewToggle",
+    "MarkdownPreviewExport",
+    "MarkdownPreviewExportFile",
+  },
+  build = "cd app && npx --yes yarn install",
+}
+```
+
+Equivalent `vim-plug` example:
+
+```vim
+Plug 'ZiYang-oyxy/markdown-preview', {
+      \ 'do': 'cd app && npx --yes yarn install',
+      \ 'for': ['markdown', 'vim-plug']
+      \ }
+```
+
+### Plugin commands
+
+These commands remain buffer-local unless you enable `g:mkdp_command_for_global`.
+
+| Command | What it does |
+| --- | --- |
+| `:MarkdownPreview` | Start the preview server if needed and open the browser page for the current buffer. |
+| `:MarkdownPreviewStop` | Stop the preview server and close the current preview page. |
+| `:MarkdownPreviewToggle` | Toggle preview for the current buffer. |
+| `:MarkdownPreviewExport` | Ask the active preview page to generate a standalone HTML export and trigger a browser download. |
+| `:MarkdownPreviewExportFile [output_path]` | Ask the active preview page to generate a standalone HTML export and write it to a file on disk. |
+
+Available mappings:
+
+- `<Plug>MarkdownPreview`
+- `<Plug>MarkdownPreviewStop`
+- `<Plug>MarkdownPreviewToggle`
+- `<Plug>MarkdownPreviewExport`
+- `<Plug>MarkdownPreviewExportFile`
+
+The plugin also creates a default `<leader>me` mapping for `MarkdownPreviewExport` when that key is free.
+
+### Plugin configuration
+
+Global variables:
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `g:mkdp_auto_start` | `0` | Open preview automatically when entering a matching buffer. |
+| `g:mkdp_auto_close` | `1` | Close the preview when the buffer becomes hidden. |
+| `g:mkdp_refresh_slow` | `0` | When `1`, refresh on `CursorHold`, `BufWrite`, and `InsertLeave` instead of continuous cursor-driven refresh. |
+| `g:mkdp_command_for_global` | `0` | Register the preview commands for all buffers instead of only configured filetypes. |
+| `g:mkdp_open_to_the_world` | `0` | Bind the preview server to `0.0.0.0` instead of `127.0.0.1`. |
+| `g:mkdp_open_ip` | `''` | Override the host part of the opened preview URL. Useful for remote editing. |
+| `g:mkdp_browser` | `''` | Browser application or command passed to the opener. |
+| `g:mkdp_echo_preview_url` | `0` | Echo the preview URL in the command line after opening it. |
+| `g:mkdp_browserfunc` | `''` | Custom Vim function name that receives the preview URL. |
+| `g:mkdp_markdown_css` | `''` | Absolute path to a custom `markdown.css`. |
+| `g:mkdp_highlight_css` | `''` | Absolute path to a custom `highlight.css`. |
+| `g:mkdp_port` | `''` | Fixed preview port. When empty, the plugin chooses a pseudo-random port. |
+| `g:mkdp_page_title` | `'「${name}」'` | Preview page title template. |
+| `g:mkdp_images_path` | `''` | Override the base directory used for resolving local images. |
+| `g:mkdp_filetypes` | `['markdown']` | Filetypes that receive the buffer-local preview commands. |
+| `g:mkdp_theme` | unset | Optional preview theme override. Use `'light'` or `'dark'`. |
+| `g:mkdp_combine_preview` | `0` | Reuse one preview page for multiple Markdown buffers. |
+| `g:mkdp_combine_preview_auto_refresh` | `1` | When combine preview is on, switch the shared page to the buffer you just entered. |
+| `g:mkdp_preview_options` | see below | Rendering and UI options forwarded to the preview page. |
+
+Default `g:mkdp_preview_options`:
+
+```vim
+let g:mkdp_preview_options = {
+      \ 'mkit': {},
+      \ 'katex': {},
+      \ 'uml': {},
+      \ 'maid': {},
+      \ 'disable_sync_scroll': 0,
+      \ 'sync_scroll_type': 'middle',
+      \ 'hide_yaml_meta': 1,
+      \ 'sequence_diagrams': {},
+      \ 'flowchart_diagrams': {},
+      \ 'content_editable': v:false,
+      \ 'disable_filename': 0,
+      \ 'toc': {}
+      \ }
+```
+
+Example plugin config:
+
+```lua
+vim.g.mkdp_auto_start = 0
+vim.g.mkdp_echo_preview_url = 1
+vim.g.mkdp_theme = "dark"
+vim.g.mkdp_filetypes = { "markdown", "mdx" }
+vim.g.mkdp_preview_options = {
+  disable_filename = 0,
+  content_editable = false,
+  sync_scroll_type = "relative",
+  toc = {
+    listType = "ul",
+  },
+  maid = {
+    themePreset = "forest",
+  },
+}
+```
+
+Custom browser callback example:
+
+```vim
+function! OpenMarkdownPreview(url)
+  execute 'silent !firefox --new-window ' . shellescape(a:url)
+endfunction
+let g:mkdp_browserfunc = 'OpenMarkdownPreview'
+```
+
+If you enable `g:mkdp_combine_preview`, also set `g:mkdp_auto_close = 0` so the shared page is not closed when you switch buffers.
+
+## Renderers And Formats
+
+The runtime is built around `markdown-it` plus extensions for:
+
+- fenced code highlighting with `highlight.js`
+- task lists
+- emoji
+- footnotes
+- definition lists
+- heading anchors
+- generated table of contents
+- YAML front matter hiding
+- citations
+- local image rewriting
+- inline image size syntax via `markdown-it-imsize`
+- line number markers for sync scroll
+- KaTeX for inline and block math
+- PlantUML from fenced `plantuml` blocks and `@startuml ... @enduml`
+- Mermaid fenced blocks and keyword-first Mermaid blocks
+- Chart.js from fenced `chart` JSON
+- flowchart.js from fenced `flowchart` blocks
+- Graphviz/Viz.js from fenced `dot` or `graphviz` blocks
+- js-sequence-diagrams from fenced `sequence-diagrams` blocks
+
+## Development
+
+Repository layout:
+
+- `plugin/` and `autoload/`: Vimscript commands, config defaults, autocmds, RPC bridge, and health checks
+- `src/`: TypeScript sources for the Node attach/runtime loader
+- `app/`: preview server, Next-based preview page, runtime asset manifest, and install helpers
+- `dist/`: exported web assets used by the runtime
+- `scripts/`: build, browse, export, preview-open, and preview-test helpers
+- `test/`: Node regression tests and Markdown fixtures
+
+Useful commands:
 
 ```bash
-yarn preview-open ./test/test.md
+yarn build-lib
 ```
-
-The command prints the local preview URL, opens the browser, and keeps the preview server running until you stop it with `Ctrl+C`.
-
-### Local Browse Mode
-
-You can launch a directory-scoped web file browser that renders Markdown files with the same preview page runtime.
-
-Browse the current directory:
 
 ```bash
-yarn browse
+yarn build-app
 ```
-
-Browse a specific directory:
 
 ```bash
-yarn browse ./docs
+node test/runtime-asset-layout.test.js
 ```
-
-Useful options:
 
 ```bash
-yarn browse ./docs \
-  --theme dark \
-  --page-title '文档浏览：${name}' \
-  --images-path ./docs/assets
+node test/browse-service.test.js
 ```
-
-Browse mode is read-only. Markdown files open in the live preview pane, text-like files fall back to inline text preview, and binary files fall back to download links.
-
-### Playwright Self-Test
-
-Use the local preview page itself as the test target and run Playwright checks against the real browser rendering output.
-
-Run the default regression set:
 
 ```bash
-yarn preview-test
+yarn preview-test -- --fixture demo
 ```
 
-Useful options:
+There is no single `yarn test` entry today; run the specific scripts you need.
 
-```bash
-# run only the demo fixture
-yarn preview-test --fixture demo
+## Troubleshooting
 
-# run only a specific case
-yarn preview-test --case demo-toc
+### The toolbox CLI does not start correctly
 
-# run with a visible browser for local debugging
-yarn preview-test --headed
-```
+- Run `yarn install` at the repo root.
+- For Playwright-backed flows, run `npx playwright install chromium`.
+- Use the `--help` output of each script to confirm arguments:
+  - `node scripts/mkdp-open-preview.js --help`
+  - `node scripts/mkdp-export-html.js --help`
+  - `node scripts/mkdp-browse.js --help`
+  - `node scripts/mkdp-test-preview.js --help`
 
-The test command writes a run summary to `test/artifacts/playwright/<timestamp>/summary.json`.
-On failure it also stores a screenshot, Playwright trace, browser log, and page snapshot in the same run directory for easier analysis.
+### `:MarkdownPreview` does not open anything
 
-### Custom Examples
+- Run `:checkhealth mkdp` in Neovim.
+- Make sure you completed one plugin runtime setup path:
+  - `call mkdp#util#install()` downloaded the prebuilt runtime into `app/bin`, or
+  - `cd app && npx --yes yarn install` installed the Node runtime dependencies.
+- If the default opener is wrong, set `g:mkdp_browser` or `g:mkdp_browserfunc`.
 
-**Table of contents**
+### `:MarkdownPreviewExportFile` fails
 
-> one of
+The export path requires an active preview client. Open the page with `:MarkdownPreview` first, then run `:MarkdownPreviewExportFile`.
 
-    ${toc}
-    [[toc]]
-    [toc]
-    [[_toc_]]
+### Remote or WSL workflows
 
-**Image Size:**
+Use `g:mkdp_open_ip` or a custom `g:mkdp_browserfunc` when the editor and the browser do not live on the same machine.
 
-``` markdown
-![image](https://user-images.githubusercontent.com/5492542/47603494-28e90000-da1f-11e8-9079-30646e551e7a.gif =400x200)
-```
+## License
 
-**PlantUML:**
-
-    @startuml
-    Bob -> Alice : hello
-    @enduml
-
-Or
-
-    ``` plantuml
-    Bob -> Alice : hello
-    ```
-
-**KaTeX:**
-
-    $\sqrt{3x-1}+(1+x)^2$
-
-    $$\begin{array}{c}
-
-    \nabla \times \vec{\mathbf{B}} -\, \frac1c\, \frac{\partial\vec{\mathbf{E}}}{\partial t} &
-    = \frac{4\pi}{c}\vec{\mathbf{j}}    \nabla \cdot \vec{\mathbf{E}} & = 4 \pi \rho \\
-
-    \nabla \times \vec{\mathbf{E}}\, +\, \frac1c\, \frac{\partial\vec{\mathbf{B}}}{\partial t} & = \vec{\mathbf{0}} \\
-
-    \nabla \cdot \vec{\mathbf{B}} & = 0
-
-    \end{array}$$
-
-**mermaid:**
-
-    ``` mermaid
-    gantt
-        dateFormat DD-MM-YYY
-        axisFormat %m/%y
-
-        title Example
-        section example section
-        activity :active, 01-02-2019, 03-08-2019
-    ```
-
-**js-sequence-diagrams:**
-
-    ``` sequence-diagrams
-    Andrew->China: Says
-    Note right of China: China thinks\nabout it
-    China-->Andrew: How are you?
-    Andrew->>China: I am good thanks!
-    ```
-**Flowchart:**
-
-    ``` flowchart
-    st=>start: Start|past:>http://www.google.com[blank]
-    e=>end: End|future:>http://www.google.com
-    op1=>operation: My Operation|past
-    op2=>operation: Stuff|current
-    sub1=>subroutine: My Subroutine|invalid
-    cond=>condition: Yes
-    or No?|approved:>http://www.google.com
-    c2=>condition: Good idea|rejected
-    io=>inputoutput: catch something...|future
-
-    st->op1(right)->cond
-    cond(yes, right)->c2
-    cond(no)->sub1(left)->op1
-    c2(yes)->io->e
-    c2(no)->op2->e
-    ```
-
-**dot:**
-
-    ``` dot
-    digraph G {
-
-      subgraph cluster_0 {
-        style=filled;
-        color=lightgrey;
-        node [style=filled,color=white];
-        a0 -> a1 -> a2 -> a3;
-        label = "process #1";
-      }
-
-      subgraph cluster_1 {
-        node [style=filled];
-        b0 -> b1 -> b2 -> b3;
-        label = "process #2";
-        color=blue
-      }
-      start -> a0;
-      start -> b0;
-      a1 -> b3;
-      b2 -> a3;
-      a3 -> a0;
-      a3 -> end;
-      b3 -> end;
-
-      start [shape=Mdiamond];
-      end [shape=Msquare];
-    }
-    ```
-
-**chart:**
-
-    ``` chart
-    {
-      "type": "pie",
-      "data": {
-        "labels": [
-          "Red",
-          "Blue",
-          "Yellow"
-        ],
-        "datasets": [
-          {
-            "data": [
-              300,
-              50,
-              100
-            ],
-            "backgroundColor": [
-              "#FF6384",
-              "#36A2EB",
-              "#FFCE56"
-            ],
-            "hoverBackgroundColor": [
-              "#FF6384",
-              "#36A2EB",
-              "#FFCE56"
-            ]
-          }
-        ]
-      },
-      "options": {}
-    }
-    ```
-
-### FAQ
-
-#### *Why is the synchronised scrolling lagging?*
-
-Set `updatetime` to a small number, for instance: `set updatetime=100`
-
-*WSL 2 issue*: Can not open browser when using WSL 2 with terminal Vim.
-
-> if you are using Ubuntu you can install xdg-utils using `sudo apt-get install -y xdg-utils`
-> checkout [issue 199](https://github.com/iamcco/markdown-preview.nvim/issues/199) for more detail.
-
-#### *How can I change the dark/light theme?*
-
-The default theme is based on your system preferences.
-There is a button hidden in the header to change the theme. Place your mouse over the header to reveal it.
-
-#### *How can I pass CLI options to the browser, like opening in a new window?*
-
-Answer: Add the following to your Neovim init script:
-
-*Linux*
-```vimscript
-  function OpenMarkdownPreview (url)
-    execute "silent ! firefox --new-window " . a:url
-  endfunction
-  let g:mkdp_browserfunc = 'OpenMarkdownPreview'
-```
-Replace `firefox` with `chrome` if you prefer. Both browsers recognize the `--new-window` option.
-
-*macOS*
-```vimscript
-  function OpenMarkdownPreview (url)
-    execute "silent ! open -a Firefox -n --args --new-window " . a:url
-  endfunction
-  let g:mkdp_browserfunc = 'OpenMarkdownPreview'
-```
-Replace `Firefox` with `Google\ Chrome` or `Brave\ Browser` if you prefer. They all recognize the `--new-window` option.
-
-### About Vim Support
-
-Vim support is powered by [@chemzqm/neovim](https://github.com/neoclide/neovim)
-
-### References
-
-- [coc.nvim](https://github.com/neoclide/coc.nvim)
-- [@chemzqm/neovim](https://github.com/neoclide/neovim)
-- [chart.js](https://github.com/chartjs/Chart.js)
-- [highlight](https://github.com/highlightjs/highlight.js)
-- [neovim/node-client](https://github.com/neovim/node-client)
-- [next.js](https://github.com/zeit/next.js)
-- [markdown.css](https://github.com/iamcco/markdown.css)
-- [markdown-it](https://github.com/markdown-it/markdown-it)
-- [markdown-it-katex](https://github.com/waylonflinn/markdown-it-katex)
-- [markdown-it-plantuml](https://github.com/gmunguia/markdown-it-plantuml)
-- [markdown-it-chart](https://github.com/tylingsoft/markdown-it-chart)
-- [mermaid](https://github.com/knsv/mermaid)
-- [opener](https://github.com/domenic/opener)
-- [sequence-diagrams](https://github.com/bramp/js-sequence-diagrams)
-- [socket.io](https://github.com/socketio/socket.io)
-
-### Buy Me A Coffee ☕️
-
-![btc](https://img.shields.io/keybase/btc/iamcco.svg?style=popout-square)
-
-![WeChat and AliPay](https://user-images.githubusercontent.com/5492542/42771079-962216b0-8958-11e8-81c0-520363ce1059.png)
+MIT

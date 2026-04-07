@@ -68,7 +68,7 @@ endfunction
 
 function! s:ensure_export_server_ready() abort
   if mkdp#rpc#get_server_status() !=# 1
-    call mkdp#util#echo_messages('Error', '[markdown-preview.nvim]: preview server is not running, run :MarkdownPreview first')
+    call mkdp#util#echo_messages('Error', '[markdown-preview]: preview server is not running, run :MarkdownPreview first')
     return v:false
   endif
   return v:true
@@ -178,7 +178,7 @@ function! s:markdown_preview_installed(status, ...) abort
     call mkdp#util#echo_messages('Error', '[markdown-preview]: install fail')
     return
   endif
-  echo '[markdown-preview.nvim]: install completed'
+  echo '[markdown-preview]: install completed'
 endfunction
 
 function! s:trim(str) abort
@@ -222,7 +222,7 @@ function! mkdp#util#pre_build_version() abort
   if filereadable(l:pre_build)
     let l:info = system(l:pre_build . ' --version')
     if l:info ==# ''
-      call mkdp#util#echo_messages('Type', "[markdown-preview.nvim]: Can not execute pre build binary bundle to get version, will download latest pre build binary bundle")
+      call mkdp#util#echo_messages('Type', "[markdown-preview]: Can not execute pre build binary bundle to get version, will download latest pre build binary bundle")
       return ''
     endif
     let l:info = split(l:info, '\n')

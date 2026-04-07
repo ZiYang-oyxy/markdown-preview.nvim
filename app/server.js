@@ -39,7 +39,7 @@ exports.run = function () {
       const message = err.message || ''
       const match = message.match(/\s*spawn\s+(.+)\s+ENOENT\s*/)
       if (match) {
-        plugin.nvim.call('mkdp#util#echo_messages', ['Error', [`[markdown-preview.nvim]: Can not open browser by using ${match[1]} command`]])
+        plugin.nvim.call('mkdp#util#echo_messages', ['Error', [`[markdown-preview]: Can not open browser by using ${match[1]} command`]])
       } else {
         plugin.nvim.call('mkdp#util#echo_messages', ['Error', [err.name, err.message]])
       }
@@ -118,7 +118,7 @@ exports.run = function () {
         const pending = pendingExportRequests[requestId]
         if (pending && pending.clientId === client.id) {
           clearPendingExportRequest(requestId)
-          echoMessages('Error', `[markdown-preview.nvim]: export failed because preview client disconnected (${pending.mode})`)
+          echoMessages('Error', `[markdown-preview]: export failed because preview client disconnected (${pending.mode})`)
         }
       })
       // update vim variable
@@ -145,28 +145,28 @@ exports.run = function () {
       clearPendingExportRequest(requestId)
 
       if (warnings && warnings.length) {
-        const warningMessages = ['[markdown-preview.nvim]: export finished with warnings'].concat(warnings)
+        const warningMessages = ['[markdown-preview]: export finished with warnings'].concat(warnings)
         echoMessages('Type', warningMessages)
       }
 
       if (!ok) {
         const errMsg = error || 'unknown export error'
-        echoMessages('Error', `[markdown-preview.nvim]: export failed: ${errMsg}`)
+        echoMessages('Error', `[markdown-preview]: export failed: ${errMsg}`)
         return
       }
 
       if (pending.mode === 'write') {
         try {
           await fs.promises.writeFile(pending.outputPath, html, 'utf8')
-          echoMessages('Type', `[markdown-preview.nvim]: exported preview to ${pending.outputPath}`)
+          echoMessages('Type', `[markdown-preview]: exported preview to ${pending.outputPath}`)
         } catch (e) {
           logger.error('write exported html fail: ', pending.outputPath, e)
-          echoMessages('Error', `[markdown-preview.nvim]: export write failed: ${pending.outputPath}`)
+          echoMessages('Error', `[markdown-preview]: export write failed: ${pending.outputPath}`)
         }
         return
       }
 
-      echoMessages('Type', '[markdown-preview.nvim]: export download triggered')
+      echoMessages('Type', '[markdown-preview]: export download triggered')
     })
   })
 
@@ -247,11 +247,11 @@ exports.run = function () {
         const selectedMode = mode === 'write' ? 'write' : 'download'
         const availableClients = getConnectedClients(bufnr)
         if (!availableClients.length) {
-          echoMessages('Error', '[markdown-preview.nvim]: no active preview page, open :MarkdownPreview first')
+          echoMessages('Error', '[markdown-preview]: no active preview page, open :MarkdownPreview first')
           return
         }
         if (selectedMode === 'write' && !outputPath) {
-          echoMessages('Error', '[markdown-preview.nvim]: output path is required for file export')
+          echoMessages('Error', '[markdown-preview]: output path is required for file export')
           return
         }
 
@@ -259,7 +259,7 @@ exports.run = function () {
         const timeout = setTimeout(() => {
           const pending = clearPendingExportRequest(requestId)
           if (pending) {
-            echoMessages('Error', '[markdown-preview.nvim]: export request timed out')
+            echoMessages('Error', '[markdown-preview]: export request timed out')
           }
         }, 60000)
 

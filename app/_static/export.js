@@ -718,7 +718,7 @@
         })
       } else {
         // eslint-disable-next-line no-console
-        console.error('[markdown-preview.nvim] export failed:', e)
+        console.error('[markdown-preview] export failed:', e)
       }
     } finally {
       isExporting = false

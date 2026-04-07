@@ -2,7 +2,7 @@
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$repo = "iamcco/markdown-preview.nvim"
+$repo = "ZiYang-oyxy/markdown-preview"
 $file = "markdown-preview-win.zip"
 
 $releases = "https://api.github.com/repos/$repo/releases"
