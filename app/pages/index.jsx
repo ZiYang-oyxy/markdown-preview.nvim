@@ -155,6 +155,7 @@ export default class PreviewPage extends React.Component {
     this.updateTocItems = this.updateTocItems.bind(this)
     this.handleWindowKeydown = this.handleWindowKeydown.bind(this)
     this.handleWindowScroll = this.handleWindowScroll.bind(this)
+    this.handleParentMessage = this.handleParentMessage.bind(this)
     this.updateActiveHeadingByScroll = this.updateActiveHeadingByScroll.bind(this)
     this.syncTocNavToActiveItem = this.syncTocNavToActiveItem.bind(this)
     this.renderMermaidDiagrams = this.renderMermaidDiagrams.bind(this)
@@ -446,6 +447,16 @@ export default class PreviewPage extends React.Component {
     })
   }
 
+  handleParentMessage(event) {
+    if (!event.data || event.data.type !== 'mkdp:scroll-to') {
+      return
+    }
+    const id = event.data.id
+    if (id) {
+      scrollToHashTarget(`#${id}`)
+    }
+  }
+
   setupHeadingObserver() {
     if (typeof document === 'undefined') {
       return
@@ -604,6 +615,7 @@ export default class PreviewPage extends React.Component {
     }
     window.addEventListener('keydown', this.handleWindowKeydown)
     window.addEventListener('scroll', this.handleWindowScroll, { passive: true })
+    window.addEventListener('message', this.handleParentMessage)
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -642,6 +654,7 @@ export default class PreviewPage extends React.Component {
 
     window.removeEventListener('keydown', this.handleWindowKeydown)
     window.removeEventListener('scroll', this.handleWindowScroll)
+    window.removeEventListener('message', this.handleParentMessage)
     closePreviewInteractions()
     this.cleanupHeadingObserver()
   }
