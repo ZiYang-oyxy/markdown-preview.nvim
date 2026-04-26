@@ -1,6 +1,6 @@
 {
   "name": "markdown-preview",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Markdown preview and export toolbox with browser, CLI, and editor integrations",
   "bin": "./app/server.js",
   "repository": "https://github.com/ZiYang-oyxy/markdown-preview.git",

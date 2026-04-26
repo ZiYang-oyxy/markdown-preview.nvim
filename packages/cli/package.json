@@ -1,6 +1,6 @@
 {
   "name": "@ziyang-oyxy/markdown-preview-toolbox",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Standalone markdown preview, export, and browse CLI tools",
   "bin": {
     "mkdp": "./bin/mkdp.js"

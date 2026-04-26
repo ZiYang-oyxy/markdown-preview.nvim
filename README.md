@@ -180,20 +180,20 @@ npm publish --access public
 If npm registry publishing is not available, publish the tarball through GitHub Releases or an internal object store instead. Users can install the release asset directly:
 
 ```bash
-npm install -g https://github.com/ZiYang-oyxy/markdown-preview.nvim/releases/download/toolbox-v0.0.10/ziyang-oyxy-markdown-preview-toolbox-0.0.10.tgz
+npm install -g https://github.com/ZiYang-oyxy/markdown-preview.nvim/releases/download/toolbox-v0.0.11/ziyang-oyxy-markdown-preview-toolbox-0.0.11.tgz
 ```
 
 Or use the installer script:
 
 ```bash
-curl -fsSL https://github.com/ZiYang-oyxy/markdown-preview.nvim/releases/download/toolbox-v0.0.10/install-markdown-preview-toolbox.sh | sh
+curl -fsSL https://github.com/ZiYang-oyxy/markdown-preview.nvim/releases/download/toolbox-v0.0.11/install-markdown-preview-toolbox.sh | sh
 ```
 
-For an internal object-store mirror, upload both `ziyang-oyxy-markdown-preview-toolbox-0.0.10.tgz` and `scripts/install-markdown-preview-toolbox.sh`, then override the tarball URL:
+For an internal object-store mirror, upload both `ziyang-oyxy-markdown-preview-toolbox-0.0.11.tgz` and `scripts/install-markdown-preview-toolbox.sh`, then override the tarball URL:
 
 ```bash
 curl -fsSL https://example.internal/install-markdown-preview-toolbox.sh | \
-  MKDP_TOOLBOX_URL=https://example.internal/ziyang-oyxy-markdown-preview-toolbox-0.0.10.tgz sh
+  MKDP_TOOLBOX_URL=https://example.internal/ziyang-oyxy-markdown-preview-toolbox-0.0.11.tgz sh
 ```
 
 For local install testing before publish:
@@ -202,7 +202,7 @@ For local install testing before publish:
 cd packages/cli
 npm pack
 TMP_PREFIX="$(mktemp -d /tmp/mkdp-toolbox-test-XXXXXX)"
-npm install --prefix "$TMP_PREFIX" ./ziyang-oyxy-markdown-preview-toolbox-0.0.10.tgz
+npm install --prefix "$TMP_PREFIX" ./ziyang-oyxy-markdown-preview-toolbox-0.0.11.tgz
 "$TMP_PREFIX/node_modules/.bin/mkdp" --version
 ```
 
