@@ -692,3 +692,14 @@ main {
     background-size: 4px 4px, 4px 4px;
   }
 }
+
+/* Hide built-in TOC when rendered inside browse shell iframe */
+.mkdp-browse-mode #toc-panel,
+.mkdp-browse-mode #toc-mobile-open-btn,
+.mkdp-browse-mode #toc-drawer-backdrop {
+  display: none !important;
+}
+
+.mkdp-browse-mode #page-shell.has-toc #content-col {
+  margin-left: 0;
+}

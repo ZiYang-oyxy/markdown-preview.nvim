@@ -378,7 +378,24 @@ export default class PreviewPage extends React.Component {
       }
     }, () => {
       this.setupHeadingObserver()
+      this.postTocToParent()
     })
+  }
+
+  postTocToParent() {
+    if (typeof window === 'undefined' || !window.parent || window.parent === window) {
+      return
+    }
+    try {
+      window.parent.postMessage({
+        type: 'mkdp:toc',
+        headings: this.state.tocItems.map((item) => ({
+          id: item.id,
+          text: item.text,
+          level: item.level
+        }))
+      }, '*')
+    } catch (_) {}
   }
 
   handleTocJump(event, id) {
@@ -487,7 +504,16 @@ export default class PreviewPage extends React.Component {
     })
 
     if (nextActiveId && nextActiveId !== this.state.activeTocId) {
-      this.setState({ activeTocId: nextActiveId })
+      this.setState({ activeTocId: nextActiveId }, () => {
+        if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+          try {
+            window.parent.postMessage({
+              type: 'mkdp:active-heading',
+              id: nextActiveId
+            }, '*')
+          } catch (_) {}
+        }
+      })
     }
   }
 
@@ -573,6 +599,9 @@ export default class PreviewPage extends React.Component {
     const pathTokens = window.location.pathname.split('/').filter(Boolean)
     const bufnr = parseFloat(pathTokens[pathTokens.length - 1] || '1')
     this.startSocket(bufnr, this.getBrowsePath())
+    if (this.getBrowsePath()) {
+      document.documentElement.classList.add('mkdp-browse-mode')
+    }
     window.addEventListener('keydown', this.handleWindowKeydown)
     window.addEventListener('scroll', this.handleWindowScroll, { passive: true })
   }
