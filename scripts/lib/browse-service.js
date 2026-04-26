@@ -49,6 +49,12 @@ const TEXT_FALLBACK_EXTENSIONS = new Set([
   '.hpp'
 ])
 
+const DISPLAYABLE_BASENAMES = new Set([
+  'Makefile', 'Dockerfile', 'LICENSE', 'LICENCE', 'Rakefile', 'Gemfile',
+  'Vagrantfile', '.gitignore', '.gitattributes', '.editorconfig',
+  '.eslintrc', '.prettierrc', '.npmrc', '.env.example'
+])
+
 const DEFAULT_IGNORED_DIR_BASENAMES = new Set([
   '.git',
   '.next',
@@ -140,6 +146,17 @@ function isMarkdownPath(filePath) {
   return MARKDOWN_EXTENSIONS.has(path.extname(filePath).toLowerCase())
 }
 
+function isDisplayableFile(filePath) {
+  if (isMarkdownPath(filePath)) {
+    return true
+  }
+  const extension = path.extname(filePath).toLowerCase()
+  if (TEXT_FALLBACK_EXTENSIONS.has(extension)) {
+    return true
+  }
+  return DISPLAYABLE_BASENAMES.has(path.basename(filePath))
+}
+
 function isIgnoredBrowseDirectory(relativePath, name) {
   if (DEFAULT_IGNORED_DIR_BASENAMES.has(name)) {
     return true
@@ -225,6 +242,11 @@ async function listBrowseDirectory(rootDir, requestPath = '.') {
     }
 
     const kind = entryStat.isDirectory() ? 'directory' : 'file'
+
+    if (kind === 'file' && !isDisplayableFile(entryRealPath)) {
+      continue
+    }
+
     visibleEntries.push({
       name: entry.name,
       relativePath: entryRelativePath,
@@ -313,6 +335,7 @@ module.exports = {
   DEFAULT_IGNORED_DIR_BASENAMES,
   DEFAULT_IGNORED_RELATIVE_DIRS,
   createBrowseError,
+  isDisplayableFile,
   isIgnoredBrowseDirectory,
   isMarkdownPath,
   listBrowseDirectory,
