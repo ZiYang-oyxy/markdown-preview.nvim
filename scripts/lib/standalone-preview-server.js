@@ -65,6 +65,9 @@ function svgIcons() {
     download: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 1v8M3.5 6.5L7 10l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 11.5v1h11v-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     toc: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="2" y1="3" x2="12" y2="3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="2" y1="11" x2="12" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
     fileEntry: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    colorTheme: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 1.5A5.5 5.5 0 007 12.5V1.5z" fill="currentColor"/></svg>',
+    mermaidChart: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="7" width="3" height="5.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="5.5" y="4" width="3" height="8.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="10" y="1.5" width="3" height="11" rx="0.5" stroke="currentColor" stroke-width="1.2"/></svg>',
+    exportHtml: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 1.5h5l3.5 3.5v7.5a1 1 0 01-1 1H3a1 1 0 01-1-1v-11a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5V5h3.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.5l2 2 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   };
 }
 
@@ -500,6 +503,45 @@ function buildBrowseShellHtml() {
       padding: 12px 16px;
     }
 
+    /* ---- Popover ---- */
+    .topbar-btn-wrap { position: relative; }
+    .topbar-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 120px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      padding: 4px;
+      z-index: 50;
+      display: none;
+    }
+    .topbar-popover.is-open { display: block; }
+    .topbar-popover-item {
+      display: block;
+      width: 100%;
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 12px;
+      text-align: left;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .topbar-popover-item:hover { background: var(--accent-soft); }
+    .topbar-popover-item.is-active { color: var(--accent); font-weight: 500; }
+    .topbar-sep {
+      display: inline-block;
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+      vertical-align: middle;
+    }
+
     /* ---- Responsive ---- */
     @media (min-width: 1100px) {
       .toc-float.is-visible { display: block; }
@@ -552,6 +594,24 @@ function buildBrowseShellHtml() {
           <span class="topbar-size" id="topbar-size"></span>
         </div>
         <div class="topbar-right">
+          <div class="topbar-btn-wrap is-hidden" id="color-theme-wrap">
+            <button class="topbar-btn" id="color-theme-btn" type="button" title="Document color theme">${esc(icons.colorTheme)}</button>
+            <div class="topbar-popover" id="color-theme-popover">
+              <button class="topbar-popover-item" data-value="light" type="button">☀️ 浅色</button>
+              <button class="topbar-popover-item" data-value="dark" type="button">🌙 深色</button>
+            </div>
+          </div>
+          <div class="topbar-btn-wrap is-hidden" id="mermaid-theme-wrap">
+            <button class="topbar-btn" id="mermaid-theme-btn" type="button" title="Mermaid chart theme">${esc(icons.mermaidChart)}</button>
+            <div class="topbar-popover" id="mermaid-theme-popover">
+              <button class="topbar-popover-item" data-value="modern" type="button">现代</button>
+              <button class="topbar-popover-item" data-value="minimal" type="button">极简</button>
+              <button class="topbar-popover-item" data-value="warm" type="button">暖色</button>
+              <button class="topbar-popover-item" data-value="forest" type="button">森林</button>
+            </div>
+          </div>
+          <button class="topbar-btn is-hidden" id="export-btn" type="button" title="Export HTML">${esc(icons.exportHtml)}</button>
+          <span class="topbar-sep is-hidden" id="doc-controls-sep"></span>
           <button class="topbar-btn is-hidden" id="toc-toggle-btn" type="button" title="Table of contents">${esc(icons.toc)}</button>
           <button class="topbar-btn" id="theme-btn" type="button" title="Toggle theme">${esc(icons.sun)}</button>
           <a class="topbar-btn is-hidden" id="raw-link" title="Download raw" target="_blank" rel="noopener">${esc(icons.download)}</a>
@@ -620,6 +680,14 @@ function buildBrowseShellHtml() {
     var tocDrawer = document.getElementById('toc-drawer');
     var tocDrawerClose = document.getElementById('toc-drawer-close');
     var tocDrawerList = document.getElementById('toc-drawer-list');
+    var colorThemeWrap = document.getElementById('color-theme-wrap');
+    var colorThemeBtn = document.getElementById('color-theme-btn');
+    var colorThemePopover = document.getElementById('color-theme-popover');
+    var mermaidThemeWrap = document.getElementById('mermaid-theme-wrap');
+    var mermaidThemeBtn = document.getElementById('mermaid-theme-btn');
+    var mermaidThemePopover = document.getElementById('mermaid-theme-popover');
+    var exportBtn = document.getElementById('export-btn');
+    var docControlsSep = document.getElementById('doc-controls-sep');
 
     /* ---- State ---- */
     var currentDir = '.';
@@ -629,6 +697,9 @@ function buildBrowseShellHtml() {
     var activeTocId = '';
     var sidebarCollapsed = localStorage.getItem('mkdp-sidebar-collapsed') === '1';
     var currentTheme = localStorage.getItem('mkdp-theme') || 'light';
+    var docTheme = 'light';
+    var docMermaidPreset = 'modern';
+    var docHasMermaid = false;
 
     /* ---- Theme ---- */
     function applyTheme(theme) {
@@ -661,6 +732,100 @@ function buildBrowseShellHtml() {
       sidebarCollapsed = !sidebarCollapsed;
       localStorage.setItem('mkdp-sidebar-collapsed', sidebarCollapsed ? '1' : '0');
       applySidebarState();
+    });
+
+    /* ---- Popover helper ---- */
+    var activePopover = null;
+
+    function openPopover(popoverEl) {
+      if (activePopover && activePopover !== popoverEl) {
+        activePopover.classList.remove('is-open');
+      }
+      popoverEl.classList.toggle('is-open');
+      activePopover = popoverEl.classList.contains('is-open') ? popoverEl : null;
+    }
+
+    function closeAllPopovers() {
+      if (activePopover) {
+        activePopover.classList.remove('is-open');
+        activePopover = null;
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      if (activePopover && !e.target.closest('.topbar-btn-wrap')) {
+        closeAllPopovers();
+      }
+    });
+
+    /* ---- Document control buttons ---- */
+    function showDocControls() {
+      colorThemeWrap.classList.remove('is-hidden');
+      exportBtn.classList.remove('is-hidden');
+      docControlsSep.classList.remove('is-hidden');
+      if (docHasMermaid) {
+        mermaidThemeWrap.classList.remove('is-hidden');
+      } else {
+        mermaidThemeWrap.classList.add('is-hidden');
+      }
+    }
+
+    function hideDocControls() {
+      colorThemeWrap.classList.add('is-hidden');
+      mermaidThemeWrap.classList.add('is-hidden');
+      exportBtn.classList.add('is-hidden');
+      docControlsSep.classList.add('is-hidden');
+    }
+
+    function updatePopoverActive(popoverEl, activeValue) {
+      var items = popoverEl.querySelectorAll('.topbar-popover-item');
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].getAttribute('data-value') === activeValue) {
+          items[i].classList.add('is-active');
+        } else {
+          items[i].classList.remove('is-active');
+        }
+      }
+    }
+
+    colorThemeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openPopover(colorThemePopover);
+    });
+
+    colorThemePopover.addEventListener('click', function(e) {
+      var item = e.target.closest('.topbar-popover-item');
+      if (!item) return;
+      var value = item.getAttribute('data-value');
+      if (value) {
+        docTheme = value;
+        previewFrame.contentWindow.postMessage({ type: 'mkdp:set-theme', theme: value }, '*');
+        updatePopoverActive(colorThemePopover, value);
+      }
+      closeAllPopovers();
+    });
+
+    mermaidThemeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openPopover(mermaidThemePopover);
+    });
+
+    mermaidThemePopover.addEventListener('click', function(e) {
+      var item = e.target.closest('.topbar-popover-item');
+      if (!item) return;
+      var value = item.getAttribute('data-value');
+      if (value) {
+        docMermaidPreset = value;
+        previewFrame.contentWindow.postMessage({ type: 'mkdp:set-mermaid-theme', preset: value }, '*');
+        updatePopoverActive(mermaidThemePopover, value);
+      }
+      closeAllPopovers();
+    });
+
+    exportBtn.addEventListener('click', function() {
+      if (previewFrame.classList.contains('is-visible')) {
+        previewFrame.contentWindow.postMessage({ type: 'mkdp:export' }, '*');
+      }
     });
 
     /* ---- Helpers ---- */
@@ -844,6 +1009,7 @@ function buildBrowseShellHtml() {
       activeTocId = '';
       tocToggleBtn.classList.add('is-hidden');
       rawLink.classList.add('is-hidden');
+      hideDocControls();
     }
 
     function showPreview(relativePath) {
@@ -864,6 +1030,7 @@ function buildBrowseShellHtml() {
       tocHeadings = [];
       activeTocId = '';
       tocToggleBtn.classList.add('is-hidden');
+      hideDocControls();
     }
 
     /* ---- Topbar ---- */
@@ -958,6 +1125,15 @@ function buildBrowseShellHtml() {
         activeTocId = event.data.id || '';
         renderTocFloat();
         renderTocDrawerList();
+      }
+
+      if (event.data.type === 'mkdp:state') {
+        docTheme = event.data.theme || 'light';
+        docMermaidPreset = event.data.mermaidPreset || 'modern';
+        docHasMermaid = Boolean(event.data.hasMermaid);
+        updatePopoverActive(colorThemePopover, docTheme);
+        updatePopoverActive(mermaidThemePopover, docMermaidPreset);
+        showDocControls();
       }
     });
 
