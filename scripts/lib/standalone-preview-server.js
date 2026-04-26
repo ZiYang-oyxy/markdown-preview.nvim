@@ -434,24 +434,36 @@ function buildBrowseShellHtml() {
       color: var(--muted);
       margin-bottom: 10px;
     }
-    .toc-list { list-style: none; }
-    .toc-list li { margin-bottom: 2px; }
-    .toc-link {
-      display: block;
-      padding: 4px 8px 4px 12px;
-      font-size: 12px;
-      color: var(--muted);
-      text-decoration: none;
-      border-left: 2px solid transparent;
-      border-radius: 0 4px 4px 0;
-      cursor: pointer;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .toc-tree { list-style: none; margin: 0; padding: 0; }
+    .toc-node { margin: 1px 0; }
+    .toc-node-row { display: flex; align-items: flex-start; gap: 2px; }
+    .toc-node-toggle {
+      width: 18px; height: 18px; flex: 0 0 18px;
+      margin-top: 1px;
+      border: 0; background: transparent; color: var(--muted);
+      cursor: pointer; border-radius: 4px; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit; line-height: 1;
     }
-    .toc-link:hover { color: var(--text); background: var(--accent-soft); }
-    .toc-link.is-active { border-left-color: var(--accent); color: var(--accent); font-weight: 500; }
-    .toc-link.is-deep { padding-left: 28px; }
+    .toc-node-toggle:hover { background: var(--accent-soft); color: var(--text); }
+    .toc-node-placeholder { width: 18px; height: 18px; flex: 0 0 18px; }
+    .toc-node-link {
+      flex: 1; min-width: 0;
+      padding: 3px 6px; border-radius: 4px;
+      font-size: 12px; color: var(--muted);
+      text-decoration: none; cursor: pointer;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      border-left: 2px solid transparent;
+    }
+    .toc-node-link:hover { color: var(--text); background: var(--accent-soft); }
+    .toc-node.is-active > .toc-node-row > .toc-node-link {
+      border-left-color: var(--accent); color: var(--accent); font-weight: 500;
+    }
+    .toc-node-children {
+      margin-left: 9px; padding-left: 8px;
+      border-left: 1px solid var(--border);
+    }
+    .toc-node.is-collapsed > .toc-node-children { display: none; }
 
     /* ---- TOC Drawer (narrow) ---- */
     .toc-drawer-backdrop {
@@ -545,7 +557,6 @@ function buildBrowseShellHtml() {
     /* ---- Responsive ---- */
     @media (min-width: 1100px) {
       .toc-float.is-visible { display: block; }
-      #toc-toggle-btn { display: none !important; }
     }
     @media (max-width: 1099px) {
       .toc-float { display: none !important; }
@@ -625,8 +636,11 @@ function buildBrowseShellHtml() {
         <iframe id="preview-frame" class="preview-frame" title="Markdown preview"></iframe>
         <div id="fallback-view" class="fallback-view"></div>
         <div class="toc-float" id="toc-float">
-          <div class="toc-title">On this page</div>
-          <ul class="toc-list" id="toc-float-list"></ul>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="toc-title">On this page</div>
+            <button class="toc-drawer-close" id="toc-float-close" type="button" title="Close">&times;</button>
+          </div>
+          <div class="toc-tree" id="toc-float-list"></div>
         </div>
       </div>
     </section>
@@ -640,7 +654,7 @@ function buildBrowseShellHtml() {
       <button class="toc-drawer-close" id="toc-drawer-close" type="button">&times;</button>
     </div>
     <div class="toc-drawer-body">
-      <ul class="toc-list" id="toc-drawer-list"></ul>
+      <div class="toc-tree" id="toc-drawer-list"></div>
     </div>
   </div>
 
@@ -688,6 +702,7 @@ function buildBrowseShellHtml() {
     var mermaidThemePopover = document.getElementById('mermaid-theme-popover');
     var exportBtn = document.getElementById('export-btn');
     var docControlsSep = document.getElementById('doc-controls-sep');
+    var tocFloatClose = document.getElementById('toc-float-close');
 
     /* ---- State ---- */
     var currentDir = '.';
@@ -700,6 +715,8 @@ function buildBrowseShellHtml() {
     var docTheme = 'light';
     var docMermaidPreset = 'modern';
     var docHasMermaid = false;
+    var tocExpandedMap = {};
+    var tocCollapsed = localStorage.getItem('mkdp-toc-collapsed') === '1';
 
     /* ---- Theme ---- */
     function applyTheme(theme) {
@@ -1081,27 +1098,99 @@ function buildBrowseShellHtml() {
       }
     }
 
-    /* ---- TOC rendering ---- */
-    function renderTocList(container) {
-      container.innerHTML = '';
-      tocHeadings.forEach(function(h) {
-        var li = document.createElement('li');
-        var a = document.createElement('a');
-        a.className = 'toc-link';
-        if (h.level >= 3) a.classList.add('is-deep');
-        if (h.id === activeTocId) a.classList.add('is-active');
-        a.textContent = h.text;
-        a.addEventListener('click', function() {
-          previewFrame.contentWindow.postMessage({ type: 'mkdp:scroll-to', id: h.id }, '*');
-          closeTocDrawer();
-        });
-        li.appendChild(a);
-        container.appendChild(li);
+    /* ---- TOC tree ---- */
+    function buildTocTree(headings) {
+      var root = { level: 0, children: [] };
+      var stack = [root];
+      headings.forEach(function(h) {
+        var node = { id: h.id, text: h.text, level: h.level, children: [] };
+        while (stack.length > 1 && node.level <= stack[stack.length - 1].level) {
+          stack.pop();
+        }
+        stack[stack.length - 1].children.push(node);
+        stack.push(node);
       });
+      return root.children;
     }
 
-    function renderTocFloat() { renderTocList(tocFloatList); }
-    function renderTocDrawerList() { renderTocList(tocDrawerList); }
+    function ensureAncestorsExpanded(tree, targetId) {
+      function walk(nodes) {
+        for (var i = 0; i < nodes.length; i++) {
+          var node = nodes[i];
+          if (node.id === targetId) return true;
+          if (node.children.length > 0 && walk(node.children)) {
+            tocExpandedMap[node.id] = true;
+            return true;
+          }
+        }
+        return false;
+      }
+      walk(tree);
+    }
+
+    function renderTocTree(container, nodes) {
+      container.innerHTML = '';
+      function renderNodes(parentEl, nodeList) {
+        nodeList.forEach(function(node) {
+          var li = document.createElement('div');
+          li.className = 'toc-node';
+          if (node.id === activeTocId) li.classList.add('is-active');
+
+          var hasChildren = node.children.length > 0;
+          var isExpanded = hasChildren ? tocExpandedMap[node.id] !== false : false;
+          if (hasChildren && !isExpanded) li.classList.add('is-collapsed');
+
+          var row = document.createElement('div');
+          row.className = 'toc-node-row';
+
+          if (hasChildren) {
+            var toggle = document.createElement('button');
+            toggle.className = 'toc-node-toggle';
+            toggle.type = 'button';
+            toggle.textContent = isExpanded ? '\u2212' : '+';
+            toggle.addEventListener('click', (function(nid) {
+              return function(e) {
+                e.stopPropagation();
+                tocExpandedMap[nid] = !tocExpandedMap[nid];
+                renderTocFloat();
+                renderTocDrawerList();
+              };
+            })(node.id));
+            row.appendChild(toggle);
+          } else {
+            var placeholder = document.createElement('span');
+            placeholder.className = 'toc-node-placeholder';
+            row.appendChild(placeholder);
+          }
+
+          var link = document.createElement('a');
+          link.className = 'toc-node-link';
+          link.textContent = node.text;
+          link.title = node.text;
+          link.addEventListener('click', function() {
+            previewFrame.contentWindow.postMessage({ type: 'mkdp:scroll-to', id: node.id }, '*');
+            closeTocDrawer();
+          });
+          row.appendChild(link);
+
+          li.appendChild(row);
+
+          if (hasChildren) {
+            var childContainer = document.createElement('div');
+            childContainer.className = 'toc-node-children';
+            renderNodes(childContainer, node.children);
+            li.appendChild(childContainer);
+          }
+
+          parentEl.appendChild(li);
+        });
+      }
+      var tree = buildTocTree(tocHeadings);
+      renderNodes(container, tree);
+    }
+
+    function renderTocFloat() { renderTocTree(tocFloatList, tocHeadings); }
+    function renderTocDrawerList() { renderTocTree(tocDrawerList, tocHeadings); }
 
     /* ---- TOC events ---- */
     window.addEventListener('message', function(event) {
@@ -1110,8 +1199,15 @@ function buildBrowseShellHtml() {
       if (event.data.type === 'mkdp:toc') {
         tocHeadings = event.data.headings || [];
         activeTocId = '';
+        // Initialize expanded map: h1/h2 expanded, h3+ collapsed
+        tocExpandedMap = {};
+        tocHeadings.forEach(function(h) {
+          tocExpandedMap[h.id] = h.level <= 2;
+        });
         if (tocHeadings.length > 0) {
-          tocFloat.classList.add('is-visible');
+          if (!tocCollapsed) {
+            tocFloat.classList.add('is-visible');
+          }
           tocToggleBtn.classList.remove('is-hidden');
         } else {
           tocFloat.classList.remove('is-visible');
@@ -1123,6 +1219,8 @@ function buildBrowseShellHtml() {
 
       if (event.data.type === 'mkdp:active-heading') {
         activeTocId = event.data.id || '';
+        var tree = buildTocTree(tocHeadings);
+        ensureAncestorsExpanded(tree, activeTocId);
         renderTocFloat();
         renderTocDrawerList();
       }
@@ -1137,6 +1235,13 @@ function buildBrowseShellHtml() {
       }
     });
 
+    /* ---- TOC float close and toggle ---- */
+    tocFloatClose.addEventListener('click', function() {
+      tocFloat.classList.remove('is-visible');
+      tocCollapsed = true;
+      localStorage.setItem('mkdp-toc-collapsed', '1');
+    });
+
     /* ---- TOC drawer open/close ---- */
     function openTocDrawer() {
       tocDrawerBackdrop.classList.add('is-open');
@@ -1148,7 +1253,22 @@ function buildBrowseShellHtml() {
       tocDrawer.classList.remove('is-open');
     }
 
-    tocToggleBtn.addEventListener('click', openTocDrawer);
+    tocToggleBtn.addEventListener('click', function() {
+      // On wide screens: toggle the float panel
+      if (window.innerWidth >= 1100) {
+        tocCollapsed = !tocCollapsed;
+        localStorage.setItem('mkdp-toc-collapsed', tocCollapsed ? '1' : '0');
+        if (tocCollapsed) {
+          tocFloat.classList.remove('is-visible');
+        } else if (tocHeadings.length > 0) {
+          tocFloat.classList.add('is-visible');
+          renderTocFloat();
+        }
+      } else {
+        // On narrow screens: open the drawer
+        openTocDrawer();
+      }
+    });
     tocDrawerClose.addEventListener('click', closeTocDrawer);
     tocDrawerBackdrop.addEventListener('click', closeTocDrawer);
 
