@@ -14,6 +14,7 @@
   "scripts": {
     "watch": "tsc -w -p ./",
     "build-app": "node ./scripts/mkdp-build-app.js",
+    "build-cli-package": "node ./scripts/mkdp-build-cli-package.js",
     "build-lib": "tsc -p ./",
     "build": "tsc -p ./ && node ./scripts/mkdp-build-app.js && cd app && yarn && pkg --targets node16-linux-x64,node16-macos-x64,node16-win-x64 --out-path ./bin . && rm -rf ./node_modules ./.next",
     "browse": "node ./scripts/mkdp-browse.js",

@@ -79,3 +79,5 @@ test/artifacts/
 .omx/
 .codex/
 .worktrees/
+packages/cli/assets/web/
+packages/cli/assets/static/

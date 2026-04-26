@@ -36,6 +36,31 @@ The runtime resolves its web assets from `app/runtime-asset-manifest.json`, whic
 
 ## Install The Toolbox
 
+### Standalone npm package
+
+Install the prebuilt CLI package when you only need the Markdown toolbox commands and do not want to clone this repository:
+
+```bash
+npm install -g @ziyang-oyxy/markdown-preview-toolbox
+```
+
+This installs the `mkdp` command:
+
+```bash
+mkdp preview README.md
+mkdp browse .
+mkdp export README.md -o README.html
+```
+
+`preview` and `browse` use the prebuilt web assets bundled in the package. `export` also needs Playwright on the target machine:
+
+```bash
+npm install -g playwright
+npx playwright install chromium
+```
+
+### Repository checkout
+
 Clone the repository and install the root dependencies:
 
 ```bash
@@ -53,6 +78,18 @@ npx playwright install chromium
 This is the default installation path for the toolbox itself.
 
 ## Use The Toolbox
+
+### Use the published `mkdp` command
+
+After installing `@ziyang-oyxy/markdown-preview-toolbox`, run the standalone CLI from any directory:
+
+```bash
+mkdp preview /path/to/file.md
+mkdp browse /path/to/workspace
+mkdp export /path/to/file.md -o /tmp/file.html
+```
+
+`mkdp preview` and `mkdp browse` keep a local server alive until you press `Ctrl+C`.
 
 ### Open a local preview page
 
@@ -113,6 +150,41 @@ Example:
 
 ```bash
 yarn export-html -- test/demo.md --config ./mkdp.config.json
+```
+
+## Build And Publish The Standalone Package
+
+Build the web runtime assets and copy them into the package before publishing:
+
+```bash
+yarn install --frozen-lockfile
+yarn build-app
+yarn build-cli-package
+```
+
+Inspect the package contents locally:
+
+```bash
+cd packages/cli
+npm pack --dry-run
+```
+
+The package must include `bin/`, `lib/`, `assets/runtime-asset-manifest.json`, `assets/web/index.html`, and `assets/static/`.
+
+Publish the scoped public package:
+
+```bash
+npm publish --access public
+```
+
+For local install testing before publish:
+
+```bash
+cd packages/cli
+npm pack
+TMP_PREFIX="$(mktemp -d /tmp/mkdp-toolbox-test-XXXXXX)"
+npm install --prefix "$TMP_PREFIX" ./ziyang-oyxy-markdown-preview-toolbox-0.0.10.tgz
+"$TMP_PREFIX/node_modules/.bin/mkdp" --version
 ```
 
 ## Browser Preview Capabilities

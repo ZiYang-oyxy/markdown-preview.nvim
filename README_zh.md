@@ -34,6 +34,31 @@
 
 ## 安装工具箱
 
+### 独立 npm 包
+
+如果你只需要 Markdown 工具箱命令，不想克隆整个仓库，可以安装预构建 CLI 包：
+
+```bash
+npm install -g @ziyang-oyxy/markdown-preview-toolbox
+```
+
+安装后会提供 `mkdp` 命令：
+
+```bash
+mkdp preview README.md
+mkdp browse .
+mkdp export README.md -o README.html
+```
+
+`preview` 和 `browse` 使用包内自带的预构建网页资源。`export` 还需要目标机器安装 Playwright：
+
+```bash
+npm install -g playwright
+npx playwright install chromium
+```
+
+### 仓库源码安装
+
 先克隆仓库并安装根目录依赖：
 
 ```bash
@@ -51,6 +76,18 @@ npx playwright install chromium
 这就是工具箱本身的默认安装方式。
 
 ## 使用工具箱
+
+### 使用已发布的 `mkdp` 命令
+
+安装 `@ziyang-oyxy/markdown-preview-toolbox` 后，可以在任意目录运行独立 CLI：
+
+```bash
+mkdp preview /path/to/file.md
+mkdp browse /path/to/workspace
+mkdp export /path/to/file.md -o /tmp/file.html
+```
+
+`mkdp preview` 和 `mkdp browse` 会保持本地服务运行，按 `Ctrl+C` 停止。
 
 ### 打开本地预览页
 
@@ -111,6 +148,41 @@ yarn preview-test -- --fixture all
 
 ```bash
 yarn export-html -- test/demo.md --config ./mkdp.config.json
+```
+
+## 构建并发布独立包
+
+发布前先构建网页运行时资源，并复制到 npm 包目录：
+
+```bash
+yarn install --frozen-lockfile
+yarn build-app
+yarn build-cli-package
+```
+
+本地检查包内容：
+
+```bash
+cd packages/cli
+npm pack --dry-run
+```
+
+包内必须包含 `bin/`、`lib/`、`assets/runtime-asset-manifest.json`、`assets/web/index.html` 和 `assets/static/`。
+
+发布 scoped public 包：
+
+```bash
+npm publish --access public
+```
+
+发布前可以先做本地安装测试：
+
+```bash
+cd packages/cli
+npm pack
+TMP_PREFIX="$(mktemp -d /tmp/mkdp-toolbox-test-XXXXXX)"
+npm install --prefix "$TMP_PREFIX" ./ziyang-oyxy-markdown-preview-toolbox-0.0.10.tgz
+"$TMP_PREFIX/node_modules/.bin/mkdp" --version
 ```
 
 ## 浏览器预览页能力
