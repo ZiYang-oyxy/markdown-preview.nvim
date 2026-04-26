@@ -51,7 +51,31 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function svgIcons() {
+  return {
+    folder: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 5a2 2 0 012-2h3.172a2 2 0 011.414.586l1.828 1.828A2 2 0 0011.828 6H16a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V5z" fill="var(--folder-color)" stroke="var(--folder-color)" stroke-width="1.2"/></svg>',
+    markdown: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 2h8l4 4v12a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="var(--accent)" stroke-width="1.3" fill="none"/><path d="M12 2v4h4" stroke="var(--accent)" stroke-width="1.3" fill="none"/><path d="M7 12l2 2 4-5" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+    textFile: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 2h8l4 4v12a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="var(--muted)" stroke-width="1.3" fill="none"/><path d="M12 2v4h4" stroke="var(--muted)" stroke-width="1.3" fill="none"/><line x1="6" y1="10" x2="14" y2="10" stroke="var(--muted)" stroke-width="1" stroke-linecap="round"/><line x1="6" y1="13" x2="12" y2="13" stroke="var(--muted)" stroke-width="1" stroke-linecap="round"/></svg>',
+    blocked: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 2h8l4 4v12a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="var(--muted)" stroke-width="1.3" fill="none"/><path d="M12 2v4h4" stroke="var(--muted)" stroke-width="1.3" fill="none"/><circle cx="14" cy="14" r="4.5" fill="var(--blocked-color)"/><line x1="11.5" y1="14" x2="16.5" y2="14" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    search: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><line x1="9.5" y1="9.5" x2="12.5" y2="12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    chevronLeft: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    chevronRight: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    chevronSep: '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 1.5l3 2.5-3 2.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    sun: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.3"/><line x1="7" y1="0.5" x2="7" y2="2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="7" y1="12" x2="7" y2="13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="0.5" y1="7" x2="2" y2="7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="12" y1="7" x2="13.5" y2="7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="2.4" y1="2.4" x2="3.5" y2="3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="10.5" y1="10.5" x2="11.6" y2="11.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="2.4" y1="11.6" x2="3.5" y2="10.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="10.5" y1="3.5" x2="11.6" y2="2.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    download: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 1v8M3.5 6.5L7 10l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 11.5v1h11v-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    toc: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="2" y1="3" x2="12" y2="3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="2" y1="11" x2="12" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    fileEntry: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    colorTheme: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 1.5A5.5 5.5 0 007 12.5V1.5z" fill="currentColor"/></svg>',
+    mermaidChart: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="7" width="3" height="5.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="5.5" y="4" width="3" height="8.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="10" y="1.5" width="3" height="11" rx="0.5" stroke="currentColor" stroke-width="1.2"/></svg>',
+    exportHtml: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 1.5h5l3.5 3.5v7.5a1 1 0 01-1 1H3a1 1 0 01-1-1v-11a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5V5h3.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.5l2 2 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  };
+}
+
 function buildBrowseShellHtml() {
+  const icons = svgIcons();
+  // Escape backticks in SVG strings for safe embedding in JS template literals
+  const esc = (s) => s.replace(/`/g, "\\`");
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,418 +83,1197 @@ function buildBrowseShellHtml() {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Markdown Browse</title>
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      color-scheme: light dark;
-      --bg: #fbf7f1;
-      --panel: rgba(255, 255, 255, 0.88);
-      --panel-alt: rgba(250, 244, 236, 0.92);
-      --border: rgba(48, 40, 34, 0.14);
-      --text: #261b14;
-      --muted: #7e6859;
-      --accent: #b6502d;
-      --accent-soft: rgba(182, 80, 45, 0.12);
-      --shadow: 0 18px 50px rgba(54, 33, 21, 0.12);
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #ffffff;
+      --surface: #f8f9fa;
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59,130,246,0.08);
+      --folder-color: #e8a948;
+      --blocked-color: #ef4444;
+      color-scheme: light;
+    }
+    html[data-theme="dark"] {
+      --bg: #111827;
+      --surface: #1f2937;
+      --border: #374151;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #60a5fa;
+      --accent-soft: rgba(96,165,250,0.1);
+      --folder-color: #fbbf24;
+      --blocked-color: #f87171;
+      color-scheme: dark;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #171310;
-        --panel: rgba(32, 27, 24, 0.9);
-        --panel-alt: rgba(27, 22, 19, 0.92);
-        --border: rgba(255, 244, 232, 0.11);
-        --text: #f7ede2;
-        --muted: #c8b6a6;
-        --accent: #ff8b5e;
-        --accent-soft: rgba(255, 139, 94, 0.16);
-        --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
-      }
-    }
-
-    * { box-sizing: border-box; }
     body {
-      margin: 0;
-      min-height: 100vh;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(220, 150, 95, 0.18), transparent 34%),
-        radial-gradient(circle at bottom right, rgba(109, 162, 154, 0.15), transparent 28%),
-        var(--bg);
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(260px, 320px) 1fr;
-      gap: 18px;
-      min-height: 100vh;
-      padding: 18px;
-    }
-    .sidebar,
-    .content {
-      min-height: calc(100vh - 36px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      box-shadow: var(--shadow);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100vh;
       overflow: hidden;
-      background: var(--panel);
-      backdrop-filter: blur(18px);
+      color: var(--text);
+      background: var(--bg);
     }
+
+    /* ---- Shell layout ---- */
+    .shell { display: flex; height: 100vh; }
+
+    /* ---- Sidebar ---- */
     .sidebar {
+      width: 280px;
+      min-width: 280px;
       display: flex;
       flex-direction: column;
-      background: linear-gradient(180deg, var(--panel), var(--panel-alt));
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      transition: width 200ms ease, min-width 200ms ease;
+      overflow: hidden;
     }
-    .sidebar-header,
-    .content-header {
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--border);
+    .sidebar.is-collapsed {
+      width: 48px;
+      min-width: 48px;
     }
-    .sidebar-header h1,
-    .content-header h2 {
-      margin: 0;
-      font-size: 16px;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .path-row {
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--muted);
-      word-break: break-all;
-    }
-    .tree {
-      padding: 10px;
-      overflow: auto;
-      flex: 1;
-    }
-    .tree-item {
-      width: 100%;
+    .sidebar-topbar {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      margin: 2px 0;
-      border: 0;
-      border-radius: 12px;
-      color: inherit;
-      background: transparent;
-      text-align: left;
-      cursor: pointer;
-      font: inherit;
+      justify-content: space-between;
+      padding: 12px 14px;
+      height: 48px;
+      flex-shrink: 0;
     }
-    .tree-item:hover,
-    .tree-item.is-active {
-      background: var(--accent-soft);
+    .sidebar-topbar .title {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
     }
-    .tree-item[disabled] {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-    .tree-kind {
+    .sidebar-topbar .collapse-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      font-size: 12px;
-      color: var(--accent);
-      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
     }
-    .tree-name {
+    .sidebar-topbar .collapse-btn:hover { background: var(--accent-soft); color: var(--text); }
+
+    .sidebar-search {
+      padding: 0 14px 8px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .sidebar-search .search-icon {
+      position: absolute;
+      left: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      display: flex;
+    }
+    .sidebar-search input {
+      width: 100%;
+      padding: 7px 10px 7px 32px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+    .sidebar-search input:focus { border-color: var(--accent); }
+
+    .sidebar-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 14px 8px;
+      font-size: 12px;
+      color: var(--muted);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .sidebar-breadcrumb .bc-btn {
+      border: none;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      padding: 1px 2px;
+      border-radius: 3px;
+    }
+    .sidebar-breadcrumb .bc-btn:hover { text-decoration: underline; }
+    .sidebar-breadcrumb .bc-current {
+      color: var(--text);
+      font-weight: 500;
+    }
+    .sidebar-breadcrumb .bc-sep {
+      display: inline-flex;
+      align-items: center;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+    .sidebar-breadcrumb .bc-back {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      padding: 2px;
+      border-radius: 4px;
+    }
+    .sidebar-breadcrumb .bc-back:hover { color: var(--text); background: var(--accent-soft); }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 14px 4px;
+      flex-shrink: 0;
+    }
+
+    .file-list {
       flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 4px 8px 12px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      margin: 1px 0;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      transition: background 120ms ease;
+    }
+    .file-item:hover { background: var(--accent-soft); }
+    .file-item.is-active { background: var(--accent-soft); }
+    .file-item.is-active .file-name { color: var(--accent); font-weight: 600; }
+    .file-item[disabled] { opacity: 0.4; cursor: not-allowed; }
+    .file-item[disabled]:hover { background: transparent; }
+    .file-icon { display: inline-flex; align-items: center; flex-shrink: 0; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-meta { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .file-arrow { display: inline-flex; align-items: center; color: var(--muted); flex-shrink: 0; }
+
+    /* Collapsed sidebar: hide everything except icon strip */
+    .sidebar.is-collapsed .sidebar-search,
+    .sidebar.is-collapsed .sidebar-breadcrumb,
+    .sidebar.is-collapsed .sidebar-divider { display: none; }
+    .sidebar.is-collapsed .sidebar-topbar .title { display: none; }
+    .sidebar.is-collapsed .sidebar-topbar { justify-content: center; padding: 12px 10px; }
+    .sidebar.is-collapsed .file-item { padding: 6px; justify-content: center; }
+    .sidebar.is-collapsed .file-info,
+    .sidebar.is-collapsed .file-arrow { display: none; }
+    .sidebar.is-collapsed .file-icon svg { width: 22px; height: 22px; }
+
+    /* ---- Content area ---- */
+    .content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .content-topbar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+      min-height: 46px;
+      gap: 8px;
+    }
+    .content-topbar.is-visible { display: flex; }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       min-width: 0;
+      flex: 1;
+    }
+    .topbar-icon { display: inline-flex; align-items: center; flex-shrink: 0; }
+    .topbar-path {
+      font-size: 12px;
+      color: var(--muted);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .tree-meta {
+    .topbar-filename {
+      font-size: 14px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .topbar-size {
       font-size: 11px;
       color: var(--muted);
-      flex: 0 0 auto;
+      flex-shrink: 0;
     }
-    .content {
+    .topbar-right {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
     }
+    .topbar-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .topbar-btn:hover { color: var(--text); border-color: var(--accent); }
+    .topbar-btn.is-hidden { display: none; }
+
+    /* ---- Content body ---- */
     .content-body {
       flex: 1;
       min-height: 0;
+      position: relative;
+      display: flex;
+    }
+
+    .welcome-screen {
       display: flex;
       flex-direction: column;
-      background: var(--panel);
-    }
-    .status {
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
+      align-items: center;
+      justify-content: center;
+      flex: 1;
       color: var(--muted);
-      font-size: 13px;
-      min-height: 48px;
+      user-select: none;
     }
-    .status.is-error {
-      color: #d24637;
-    }
-    .preview-frame,
-    .fallback-view {
+    .welcome-screen h2 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .welcome-screen p { font-size: 14px; }
+    .welcome-screen.is-hidden { display: none; }
+
+    .preview-frame {
       flex: 1;
       width: 100%;
       border: 0;
       background: transparent;
-      min-height: 0;
-    }
-    .fallback-view {
       display: none;
-      padding: 20px;
+    }
+    .preview-frame.is-visible { display: block; }
+
+    .fallback-view {
+      flex: 1;
+      width: 100%;
+      border: 0;
+      display: none;
+      padding: 24px;
       overflow: auto;
     }
-    .fallback-view.is-visible {
-      display: block;
-    }
+    .fallback-view.is-visible { display: block; }
     .fallback-text {
       margin: 0;
       white-space: pre-wrap;
       word-break: break-word;
-      font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+      font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--text);
     }
     .fallback-card {
-      max-width: 760px;
-      padding: 20px;
+      max-width: 640px;
+      padding: 24px;
       border: 1px solid var(--border);
-      border-radius: 16px;
-      background: var(--panel-alt);
+      border-radius: 10px;
+      background: var(--surface);
     }
-    .fallback-card a {
-      color: var(--accent);
-      text-decoration: none;
+    .fallback-card h3 { font-size: 16px; margin-bottom: 8px; }
+    .fallback-card p { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .fallback-card a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .fallback-card a:hover { text-decoration: underline; }
+
+    /* ---- Floating TOC ---- */
+    .toc-float {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 200px;
+      max-height: calc(100% - 24px);
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 12px;
+      display: none;
+      z-index: 5;
+    }
+    .toc-float.is-visible { display: block; }
+    .toc-title {
+      font-size: 11px;
       font-weight: 600;
-    }
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      padding: 12px 20px 0;
-    }
-    .toolbar button {
-      border: 1px solid var(--border);
-      background: transparent;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       color: var(--muted);
-      border-radius: 999px;
-      padding: 8px 12px;
+      margin-bottom: 10px;
+    }
+    .toc-tree { list-style: none; margin: 0; padding: 0; }
+    .toc-node { margin: 1px 0; }
+    .toc-node-row { display: flex; align-items: flex-start; gap: 2px; }
+    .toc-node-toggle {
+      width: 18px; height: 18px; flex: 0 0 18px;
+      margin-top: 1px;
+      border: 0; background: transparent; color: var(--muted);
+      cursor: pointer; border-radius: 4px; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit; line-height: 1;
+    }
+    .toc-node-toggle:hover { background: var(--accent-soft); color: var(--text); }
+    .toc-node-placeholder { width: 18px; height: 18px; flex: 0 0 18px; }
+    .toc-node-link {
+      flex: 1; min-width: 0;
+      padding: 3px 6px; border-radius: 4px;
+      font-size: 12px; color: var(--muted);
+      text-decoration: none; cursor: pointer;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      border-left: 2px solid transparent;
+    }
+    .toc-node-link:hover { color: var(--text); background: var(--accent-soft); }
+    .toc-node.is-active > .toc-node-row > .toc-node-link {
+      border-left-color: var(--accent); color: var(--accent); font-weight: 500;
+    }
+    .toc-node-children {
+      margin-left: 9px; padding-left: 8px;
+      border-left: 1px solid var(--border);
+    }
+    .toc-node.is-collapsed > .toc-node-children { display: none; }
+
+    /* ---- TOC Drawer (narrow) ---- */
+    .toc-drawer-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+    }
+    .toc-drawer-backdrop.is-open { display: block; }
+    .toc-drawer {
+      position: fixed;
+      top: 0;
+      right: -280px;
+      width: 280px;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 101;
+      transition: right 200ms ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .toc-drawer.is-open { right: 0; }
+    .toc-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .toc-drawer-header span { font-size: 14px; font-weight: 600; }
+    .toc-drawer-close {
+      border: none;
+      background: transparent;
+      font-size: 18px;
+      color: var(--muted);
       cursor: pointer;
-      font: inherit;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 4px;
     }
-    .toolbar button:hover {
+    .toc-drawer-close:hover { color: var(--text); background: var(--accent-soft); }
+    .toc-drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+    }
+
+    /* ---- Popover ---- */
+    .topbar-btn-wrap { position: relative; }
+    .topbar-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 120px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      padding: 4px;
+      z-index: 50;
+      display: none;
+    }
+    .topbar-popover.is-open { display: block; }
+    .topbar-popover-item {
+      display: block;
+      width: 100%;
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
       color: var(--text);
-      border-color: var(--accent);
+      font-size: 12px;
+      text-align: left;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: inherit;
     }
-    @media (max-width: 960px) {
-      .layout {
-        grid-template-columns: 1fr;
+    .topbar-popover-item:hover { background: var(--accent-soft); }
+    .topbar-popover-item.is-active { color: var(--accent); font-weight: 500; }
+    .topbar-sep {
+      display: inline-block;
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+      vertical-align: middle;
+    }
+
+    /* ---- Responsive ---- */
+    @media (min-width: 1100px) {
+      .toc-float.is-visible { display: block; }
+    }
+    @media (max-width: 1099px) {
+      .toc-float { display: none !important; }
+    }
+    @media (max-width: 959px) {
+      .sidebar:not(.is-collapsed) {
+        width: 48px;
+        min-width: 48px;
       }
-      .sidebar,
-      .content {
-        min-height: auto;
-      }
-      .content {
-        min-height: 60vh;
-      }
+      .sidebar:not(.is-collapsed) .sidebar-search,
+      .sidebar:not(.is-collapsed) .sidebar-breadcrumb,
+      .sidebar:not(.is-collapsed) .sidebar-divider { display: none; }
+      .sidebar:not(.is-collapsed) .sidebar-topbar .title { display: none; }
+      .sidebar:not(.is-collapsed) .sidebar-topbar { justify-content: center; padding: 12px 10px; }
+      .sidebar:not(.is-collapsed) .file-item { padding: 6px; justify-content: center; }
+      .sidebar:not(.is-collapsed) .file-info,
+      .sidebar:not(.is-collapsed) .file-arrow { display: none; }
+      .sidebar:not(.is-collapsed) .file-icon svg { width: 22px; height: 22px; }
     }
   </style>
 </head>
 <body>
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <h1>Browse</h1>
-        <div class="path-row" id="root-path">Loading root…</div>
+  <div class="shell">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-topbar">
+        <span class="title">Files</span>
+        <button class="collapse-btn" id="collapse-btn" type="button" title="Collapse sidebar">${esc(icons.chevronLeft)}</button>
       </div>
-      <div class="toolbar">
-        <button type="button" id="up-button">Up</button>
+      <div class="sidebar-search">
+        <span class="search-icon">${esc(icons.search)}</span>
+        <input type="text" id="search-input" placeholder="Search files..." autocomplete="off" />
       </div>
-      <div class="tree" id="tree"></div>
+      <div class="sidebar-breadcrumb" id="breadcrumb"></div>
+      <div class="sidebar-divider"></div>
+      <div class="file-list" id="file-list"></div>
     </aside>
+
+    <!-- Content -->
     <section class="content">
-      <div class="content-header">
-        <h2 id="content-title">Select a file</h2>
-        <div class="path-row" id="content-path">Markdown files open in the live preview pane.</div>
+      <div class="content-topbar" id="content-topbar">
+        <div class="topbar-left">
+          <span class="topbar-icon" id="topbar-icon"></span>
+          <span class="topbar-path" id="topbar-path"></span>
+          <span class="topbar-filename" id="topbar-filename"></span>
+          <span class="topbar-size" id="topbar-size"></span>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-btn-wrap is-hidden" id="color-theme-wrap">
+            <button class="topbar-btn" id="color-theme-btn" type="button" title="Document color theme">${esc(icons.colorTheme)}</button>
+            <div class="topbar-popover" id="color-theme-popover">
+              <button class="topbar-popover-item" data-value="light" type="button">☀️ 浅色</button>
+              <button class="topbar-popover-item" data-value="dark" type="button">🌙 深色</button>
+            </div>
+          </div>
+          <div class="topbar-btn-wrap is-hidden" id="mermaid-theme-wrap">
+            <button class="topbar-btn" id="mermaid-theme-btn" type="button" title="Mermaid chart theme">${esc(icons.mermaidChart)}</button>
+            <div class="topbar-popover" id="mermaid-theme-popover">
+              <button class="topbar-popover-item" data-value="modern" type="button">现代</button>
+              <button class="topbar-popover-item" data-value="minimal" type="button">极简</button>
+              <button class="topbar-popover-item" data-value="warm" type="button">暖色</button>
+              <button class="topbar-popover-item" data-value="forest" type="button">森林</button>
+            </div>
+          </div>
+          <button class="topbar-btn is-hidden" id="export-btn" type="button" title="Export HTML">${esc(icons.exportHtml)}</button>
+          <span class="topbar-sep is-hidden" id="doc-controls-sep"></span>
+          <button class="topbar-btn is-hidden" id="toc-toggle-btn" type="button" title="Table of contents">${esc(icons.toc)}</button>
+          <button class="topbar-btn" id="theme-btn" type="button" title="Toggle theme">${esc(icons.sun)}</button>
+          <a class="topbar-btn is-hidden" id="raw-link" title="Download raw" target="_blank" rel="noopener">${esc(icons.download)}</a>
+        </div>
       </div>
-      <div class="status" id="status">Browse mode is ready.</div>
-      <div class="content-body">
+      <div class="content-body" id="content-body">
+        <div class="welcome-screen" id="welcome-screen">
+          <h2>Markdown Preview</h2>
+          <p>Select a file from the sidebar to get started.</p>
+        </div>
         <iframe id="preview-frame" class="preview-frame" title="Markdown preview"></iframe>
         <div id="fallback-view" class="fallback-view"></div>
+        <div class="toc-float" id="toc-float">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="toc-title">On this page</div>
+            <button class="toc-drawer-close" id="toc-float-close" type="button" title="Close">&times;</button>
+          </div>
+          <div class="toc-tree" id="toc-float-list"></div>
+        </div>
       </div>
     </section>
   </div>
-  <script>
-    const treeEl = document.getElementById('tree');
-    const rootPathEl = document.getElementById('root-path');
-    const contentTitleEl = document.getElementById('content-title');
-    const contentPathEl = document.getElementById('content-path');
-    const statusEl = document.getElementById('status');
-    const previewFrameEl = document.getElementById('preview-frame');
-    const fallbackViewEl = document.getElementById('fallback-view');
-    const upButtonEl = document.getElementById('up-button');
-    let currentDir = '.';
-    let selectedPath = '';
 
+  <!-- TOC Drawer -->
+  <div class="toc-drawer-backdrop" id="toc-drawer-backdrop"></div>
+  <div class="toc-drawer" id="toc-drawer">
+    <div class="toc-drawer-header">
+      <span>On this page</span>
+      <button class="toc-drawer-close" id="toc-drawer-close" type="button">&times;</button>
+    </div>
+    <div class="toc-drawer-body">
+      <div class="toc-tree" id="toc-drawer-list"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ---- Icon strings ---- */
+    var ICONS = {
+      folder: '${esc(icons.folder)}',
+      markdown: '${esc(icons.markdown)}',
+      textFile: '${esc(icons.textFile)}',
+      blocked: '${esc(icons.blocked)}',
+      chevronLeft: '${esc(icons.chevronLeft)}',
+      chevronRight: '${esc(icons.chevronRight)}',
+      chevronSep: '${esc(icons.chevronSep)}',
+      fileEntry: '${esc(icons.fileEntry)}'
+    };
+
+    /* ---- DOM refs ---- */
+    var sidebar = document.getElementById('sidebar');
+    var collapseBtn = document.getElementById('collapse-btn');
+    var searchInput = document.getElementById('search-input');
+    var breadcrumbEl = document.getElementById('breadcrumb');
+    var fileListEl = document.getElementById('file-list');
+    var contentTopbar = document.getElementById('content-topbar');
+    var topbarIcon = document.getElementById('topbar-icon');
+    var topbarPath = document.getElementById('topbar-path');
+    var topbarFilename = document.getElementById('topbar-filename');
+    var topbarSize = document.getElementById('topbar-size');
+    var tocToggleBtn = document.getElementById('toc-toggle-btn');
+    var themeBtn = document.getElementById('theme-btn');
+    var rawLink = document.getElementById('raw-link');
+    var welcomeScreen = document.getElementById('welcome-screen');
+    var previewFrame = document.getElementById('preview-frame');
+    var fallbackView = document.getElementById('fallback-view');
+    var tocFloat = document.getElementById('toc-float');
+    var tocFloatList = document.getElementById('toc-float-list');
+    var tocDrawerBackdrop = document.getElementById('toc-drawer-backdrop');
+    var tocDrawer = document.getElementById('toc-drawer');
+    var tocDrawerClose = document.getElementById('toc-drawer-close');
+    var tocDrawerList = document.getElementById('toc-drawer-list');
+    var colorThemeWrap = document.getElementById('color-theme-wrap');
+    var colorThemeBtn = document.getElementById('color-theme-btn');
+    var colorThemePopover = document.getElementById('color-theme-popover');
+    var mermaidThemeWrap = document.getElementById('mermaid-theme-wrap');
+    var mermaidThemeBtn = document.getElementById('mermaid-theme-btn');
+    var mermaidThemePopover = document.getElementById('mermaid-theme-popover');
+    var exportBtn = document.getElementById('export-btn');
+    var docControlsSep = document.getElementById('doc-controls-sep');
+    var tocFloatClose = document.getElementById('toc-float-close');
+
+    /* ---- State ---- */
+    var currentDir = '.';
+    var selectedPath = '';
+    var allEntries = [];
+    var tocHeadings = [];
+    var activeTocId = '';
+    var sidebarCollapsed = localStorage.getItem('mkdp-sidebar-collapsed') === '1';
+    var currentTheme = localStorage.getItem('mkdp-theme') || 'light';
+    var docTheme = 'light';
+    var docMermaidPreset = 'modern';
+    var docHasMermaid = false;
+    var tocExpandedMap = {};
+    var tocCollapsed = localStorage.getItem('mkdp-toc-collapsed') === '1';
+
+    /* ---- Theme ---- */
+    function applyTheme(theme) {
+      currentTheme = theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+      localStorage.setItem('mkdp-theme', theme);
+    }
+    applyTheme(currentTheme);
+
+    themeBtn.addEventListener('click', function() {
+      applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+    });
+
+    /* ---- Sidebar collapse ---- */
+    function applySidebarState() {
+      if (sidebarCollapsed) {
+        sidebar.classList.add('is-collapsed');
+        collapseBtn.innerHTML = ICONS.chevronRight;
+        collapseBtn.title = 'Expand sidebar';
+      } else {
+        sidebar.classList.remove('is-collapsed');
+        collapseBtn.innerHTML = ICONS.chevronLeft;
+        collapseBtn.title = 'Collapse sidebar';
+      }
+    }
+    applySidebarState();
+
+    collapseBtn.addEventListener('click', function() {
+      sidebarCollapsed = !sidebarCollapsed;
+      localStorage.setItem('mkdp-sidebar-collapsed', sidebarCollapsed ? '1' : '0');
+      applySidebarState();
+    });
+
+    /* ---- Popover helper ---- */
+    var activePopover = null;
+
+    function openPopover(popoverEl) {
+      if (activePopover && activePopover !== popoverEl) {
+        activePopover.classList.remove('is-open');
+      }
+      popoverEl.classList.toggle('is-open');
+      activePopover = popoverEl.classList.contains('is-open') ? popoverEl : null;
+    }
+
+    function closeAllPopovers() {
+      if (activePopover) {
+        activePopover.classList.remove('is-open');
+        activePopover = null;
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      if (activePopover && !e.target.closest('.topbar-btn-wrap')) {
+        closeAllPopovers();
+      }
+    });
+
+    /* ---- Document control buttons ---- */
+    function showDocControls() {
+      colorThemeWrap.classList.remove('is-hidden');
+      exportBtn.classList.remove('is-hidden');
+      docControlsSep.classList.remove('is-hidden');
+      if (docHasMermaid) {
+        mermaidThemeWrap.classList.remove('is-hidden');
+      } else {
+        mermaidThemeWrap.classList.add('is-hidden');
+      }
+    }
+
+    function hideDocControls() {
+      colorThemeWrap.classList.add('is-hidden');
+      mermaidThemeWrap.classList.add('is-hidden');
+      exportBtn.classList.add('is-hidden');
+      docControlsSep.classList.add('is-hidden');
+    }
+
+    function updatePopoverActive(popoverEl, activeValue) {
+      var items = popoverEl.querySelectorAll('.topbar-popover-item');
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].getAttribute('data-value') === activeValue) {
+          items[i].classList.add('is-active');
+        } else {
+          items[i].classList.remove('is-active');
+        }
+      }
+    }
+
+    colorThemeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openPopover(colorThemePopover);
+    });
+
+    colorThemePopover.addEventListener('click', function(e) {
+      var item = e.target.closest('.topbar-popover-item');
+      if (!item) return;
+      var value = item.getAttribute('data-value');
+      if (value) {
+        docTheme = value;
+        previewFrame.contentWindow.postMessage({ type: 'mkdp:set-theme', theme: value }, '*');
+        updatePopoverActive(colorThemePopover, value);
+      }
+      closeAllPopovers();
+    });
+
+    mermaidThemeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openPopover(mermaidThemePopover);
+    });
+
+    mermaidThemePopover.addEventListener('click', function(e) {
+      var item = e.target.closest('.topbar-popover-item');
+      if (!item) return;
+      var value = item.getAttribute('data-value');
+      if (value) {
+        docMermaidPreset = value;
+        previewFrame.contentWindow.postMessage({ type: 'mkdp:set-mermaid-theme', preset: value }, '*');
+        updatePopoverActive(mermaidThemePopover, value);
+      }
+      closeAllPopovers();
+    });
+
+    exportBtn.addEventListener('click', function() {
+      if (previewFrame.classList.contains('is-visible')) {
+        previewFrame.contentWindow.postMessage({ type: 'mkdp:export' }, '*');
+      }
+    });
+
+    /* ---- Helpers ---- */
     function toQuery(pathValue) {
       return new URLSearchParams({ path: pathValue || '.' }).toString();
     }
 
-    function setStatus(message, isError) {
-      statusEl.textContent = message;
-      statusEl.classList.toggle('is-error', Boolean(isError));
+    function escHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    function setContentMeta(title, relativePath) {
-      contentTitleEl.textContent = title || 'Select a file';
-      contentPathEl.textContent = relativePath || 'Markdown files open in the live preview pane.';
-    }
-
-    function showIframe(relativePath) {
-      fallbackViewEl.classList.remove('is-visible');
-      fallbackViewEl.innerHTML = '';
-      previewFrameEl.style.display = 'block';
-      previewFrameEl.src = '/page/1?browsePath=' + encodeURIComponent(relativePath);
-    }
-
-    function showFallbackHtml(html) {
-      previewFrameEl.removeAttribute('src');
-      previewFrameEl.style.display = 'none';
-      fallbackViewEl.innerHTML = html;
-      fallbackViewEl.classList.add('is-visible');
-    }
-
-    function buildParentPath(relativePath) {
-      if (!relativePath || relativePath === '.') {
-        return '.';
-      }
-      const parts = relativePath.split('/').filter(Boolean);
+    function buildParentPath(rel) {
+      if (!rel || rel === '.') return '.';
+      var parts = rel.split('/').filter(Boolean);
       parts.pop();
       return parts.length ? parts.join('/') : '.';
     }
 
-    async function apiJson(pathname) {
-      const response = await fetch(pathname);
-      const payload = await response.json();
+    /* ---- Breadcrumb ---- */
+    function renderBreadcrumb(dir) {
+      breadcrumbEl.innerHTML = '';
+      if (!dir || dir === '.') return;
+
+      // Back button
+      var backBtn = document.createElement('button');
+      backBtn.className = 'bc-back';
+      backBtn.type = 'button';
+      backBtn.title = 'Go up';
+      backBtn.innerHTML = ICONS.chevronLeft;
+      backBtn.addEventListener('click', function() { loadDirectory(buildParentPath(dir)); });
+      breadcrumbEl.appendChild(backBtn);
+
+      var segments = dir.split('/').filter(Boolean);
+      segments.forEach(function(seg, idx) {
+        // Separator
+        if (idx > 0) {
+          var sep = document.createElement('span');
+          sep.className = 'bc-sep';
+          sep.innerHTML = ICONS.chevronSep;
+          breadcrumbEl.appendChild(sep);
+        }
+
+        var isLast = idx === segments.length - 1;
+        if (isLast) {
+          var cur = document.createElement('span');
+          cur.className = 'bc-current';
+          cur.textContent = seg;
+          breadcrumbEl.appendChild(cur);
+        } else {
+          var btn = document.createElement('button');
+          btn.className = 'bc-btn';
+          btn.type = 'button';
+          btn.textContent = seg;
+          var targetPath = segments.slice(0, idx + 1).join('/');
+          btn.addEventListener('click', (function(tp) { return function() { loadDirectory(tp); }; })(targetPath));
+          breadcrumbEl.appendChild(btn);
+        }
+      });
+    }
+
+    /* ---- Search ---- */
+    searchInput.addEventListener('input', function() {
+      var q = searchInput.value.toLowerCase().trim();
+      if (!q) {
+        renderFileList(allEntries);
+        return;
+      }
+      var filtered = allEntries.filter(function(e) {
+        return e.name.toLowerCase().indexOf(q) !== -1;
+      });
+      renderFileList(filtered);
+    });
+
+    /* ---- File icons ---- */
+    function getFileIcon(entry) {
+      if (entry.kind === 'directory') return ICONS.folder;
+      if (entry.kind === 'blocked') return ICONS.blocked;
+      if (entry.isMarkdown) return ICONS.markdown;
+      return ICONS.textFile;
+    }
+
+    /* ---- File list ---- */
+    function renderFileList(entries) {
+      fileListEl.innerHTML = '';
+      if (!entries || !entries.length) {
+        var empty = document.createElement('div');
+        empty.style.padding = '12px 10px';
+        empty.style.color = 'var(--muted)';
+        empty.style.fontSize = '13px';
+        empty.textContent = 'No files found.';
+        fileListEl.appendChild(empty);
+        return;
+      }
+
+      entries.forEach(function(entry) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'file-item';
+        btn.disabled = entry.kind === 'blocked';
+        if (entry.relativePath === selectedPath) btn.classList.add('is-active');
+
+        var iconSpan = document.createElement('span');
+        iconSpan.className = 'file-icon';
+        iconSpan.innerHTML = getFileIcon(entry);
+
+        var info = document.createElement('span');
+        info.className = 'file-info';
+
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'file-name';
+        nameSpan.textContent = entry.name;
+        info.appendChild(nameSpan);
+
+        var meta = '';
+        if (entry.kind === 'blocked') meta = 'blocked';
+        else if (entry.isSymlink) meta = 'symlink';
+        else if (entry.kind === 'directory') meta = 'folder';
+        else if (entry.isMarkdown) meta = 'markdown';
+        if (meta) {
+          var metaSpan = document.createElement('span');
+          metaSpan.className = 'file-meta';
+          metaSpan.textContent = meta;
+          info.appendChild(metaSpan);
+        }
+
+        btn.appendChild(iconSpan);
+        btn.appendChild(info);
+
+        if (entry.kind === 'directory') {
+          var arrow = document.createElement('span');
+          arrow.className = 'file-arrow';
+          arrow.innerHTML = ICONS.fileEntry;
+          btn.appendChild(arrow);
+        }
+
+        btn.addEventListener('click', function() {
+          if (entry.kind === 'directory') { loadDirectory(entry.relativePath); return; }
+          if (entry.kind === 'blocked') return;
+          openFile(entry.relativePath, entry);
+        });
+
+        fileListEl.appendChild(btn);
+      });
+    }
+
+    /* ---- API helper ---- */
+    async function apiJson(url) {
+      var response = await fetch(url);
+      var payload = await response.json();
       if (!response.ok || payload.ok === false) {
         throw new Error(payload.error || 'Request failed');
       }
       return payload;
     }
 
-    function renderTree(payload) {
-      currentDir = payload.relativePath || '.';
-      location.hash = currentDir === '.' ? '' : currentDir;
-      rootPathEl.textContent = payload.rootPath;
-      upButtonEl.disabled = currentDir === '.';
-      treeEl.innerHTML = '';
-
-      if (!payload.entries.length) {
-        const empty = document.createElement('div');
-        empty.className = 'path-row';
-        empty.textContent = 'This directory is empty.';
-        treeEl.appendChild(empty);
-        return;
-      }
-
-      payload.entries.forEach((entry) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'tree-item';
-        button.disabled = entry.kind === 'blocked';
-        if (entry.relativePath === selectedPath) {
-          button.classList.add('is-active');
-        }
-
-        const kind = document.createElement('span');
-        kind.className = 'tree-kind';
-        kind.textContent = entry.kind === 'directory' ? 'DIR' : entry.kind === 'blocked' ? '!' : entry.isMarkdown ? 'MD' : 'FILE';
-
-        const name = document.createElement('span');
-        name.className = 'tree-name';
-        name.textContent = entry.name;
-
-        const meta = document.createElement('span');
-        meta.className = 'tree-meta';
-        if (entry.kind === 'blocked') {
-          meta.textContent = 'blocked';
-        } else if (entry.isSymlink) {
-          meta.textContent = 'symlink';
-        } else if (entry.kind === 'directory') {
-          meta.textContent = 'dir';
-        } else if (entry.isMarkdown) {
-          meta.textContent = 'markdown';
-        }
-
-        button.appendChild(kind);
-        button.appendChild(name);
-        button.appendChild(meta);
-
-        button.addEventListener('click', () => {
-          if (entry.kind === 'directory') {
-            loadDirectory(entry.relativePath);
-            return;
-          }
-          if (entry.kind === 'blocked') {
-            setStatus('Blocked path: ' + entry.relativePath, true);
-            return;
-          }
-          openFile(entry.relativePath);
-        });
-
-        treeEl.appendChild(button);
-      });
-    }
-
+    /* ---- Load directory ---- */
     async function loadDirectory(pathValue) {
-      setStatus('Loading directory…');
       try {
-        const payload = await apiJson('/_mkdp/browse/tree?' + toQuery(pathValue));
-        renderTree(payload);
-        setStatus('Directory loaded.');
+        var payload = await apiJson('/_mkdp/browse/tree?' + toQuery(pathValue));
+        currentDir = payload.relativePath || '.';
+        location.hash = currentDir === '.' ? '' : currentDir;
+        allEntries = payload.entries || [];
+        searchInput.value = '';
+        renderBreadcrumb(currentDir);
+        renderFileList(allEntries);
       } catch (error) {
-        setStatus(error.message || String(error), true);
+        fileListEl.innerHTML = '<div style="padding:12px 10px;color:var(--blocked-color);font-size:13px">' + escHtml(error.message || String(error)) + '</div>';
       }
     }
 
-    async function openFile(relativePath) {
+    /* ---- Content views ---- */
+    function showWelcome() {
+      welcomeScreen.classList.remove('is-hidden');
+      previewFrame.classList.remove('is-visible');
+      previewFrame.removeAttribute('src');
+      fallbackView.classList.remove('is-visible');
+      fallbackView.innerHTML = '';
+      contentTopbar.classList.remove('is-visible');
+      tocFloat.classList.remove('is-visible');
+      tocHeadings = [];
+      activeTocId = '';
+      tocToggleBtn.classList.add('is-hidden');
+      rawLink.classList.add('is-hidden');
+      hideDocControls();
+    }
+
+    function showPreview(relativePath) {
+      welcomeScreen.classList.add('is-hidden');
+      fallbackView.classList.remove('is-visible');
+      fallbackView.innerHTML = '';
+      previewFrame.classList.add('is-visible');
+      previewFrame.src = '/page/1?browsePath=' + encodeURIComponent(relativePath);
+    }
+
+    function showFallback(html) {
+      welcomeScreen.classList.add('is-hidden');
+      previewFrame.classList.remove('is-visible');
+      previewFrame.removeAttribute('src');
+      fallbackView.innerHTML = html;
+      fallbackView.classList.add('is-visible');
+      tocFloat.classList.remove('is-visible');
+      tocHeadings = [];
+      activeTocId = '';
+      tocToggleBtn.classList.add('is-hidden');
+      hideDocControls();
+    }
+
+    /* ---- Topbar ---- */
+    function setTopbar(entry) {
+      contentTopbar.classList.add('is-visible');
+      topbarIcon.innerHTML = getFileIcon(entry);
+      var parts = entry.relativePath.split('/');
+      var fname = parts.pop();
+      topbarPath.textContent = parts.length ? parts.join('/') + '/' : '';
+      topbarFilename.textContent = fname;
+      topbarSize.textContent = '';
+      rawLink.href = '/_mkdp/browse/raw?' + toQuery(entry.relativePath);
+      rawLink.classList.remove('is-hidden');
+    }
+
+    /* ---- Open file ---- */
+    async function openFile(relativePath, entry) {
       selectedPath = relativePath;
-      setStatus('Loading file…');
+      renderFileList(allEntries.filter(function(e) {
+        if (!searchInput.value.trim()) return true;
+        return e.name.toLowerCase().indexOf(searchInput.value.toLowerCase().trim()) !== -1;
+      }));
+
       try {
-        const payload = await apiJson('/_mkdp/browse/file?' + toQuery(relativePath));
-        setContentMeta(payload.name, payload.relativePath);
+        var payload = await apiJson('/_mkdp/browse/file?' + toQuery(relativePath));
+
+        var eInfo = entry || { name: payload.name, relativePath: payload.relativePath, kind: payload.kind, isMarkdown: payload.kind === 'markdown' };
+        setTopbar(eInfo);
+
         if (payload.kind === 'markdown') {
-          showIframe(payload.relativePath);
-          setStatus('Markdown preview loaded.');
+          showPreview(payload.relativePath);
           return;
         }
         if (payload.fallback === 'text') {
-          showFallbackHtml('<pre class="fallback-text"></pre>');
-          fallbackViewEl.querySelector('.fallback-text').textContent = payload.text || '';
-          setStatus('Text fallback rendered.');
+          showFallback('<pre class="fallback-text"></pre>');
+          fallbackView.querySelector('.fallback-text').textContent = payload.text || '';
           return;
         }
-        showFallbackHtml(
+        showFallback(
           '<div class="fallback-card">' +
-            '<h3>Download fallback</h3>' +
-            '<p>This file is not rendered as Markdown-rich text.</p>' +
-            '<p><a href="/_mkdp/browse/raw?' + toQuery(payload.relativePath) + '">Download ' +
-              payload.name.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
-            '</a></p>' +
+            '<h3>Download file</h3>' +
+            '<p>This file cannot be rendered as rich text.</p>' +
+            '<p><a href="/_mkdp/browse/raw?' + toQuery(payload.relativePath) + '">Download ' + escHtml(payload.name) + '</a></p>' +
           '</div>'
         );
-        setStatus('Binary/download fallback ready.');
       } catch (error) {
-        showFallbackHtml('');
-        setStatus(error.message || String(error), true);
+        showFallback('<div style="padding:16px;color:var(--blocked-color)">' + escHtml(error.message || String(error)) + '</div>');
       }
     }
 
-    upButtonEl.addEventListener('click', () => {
-      if (currentDir === '.') {
-        return;
+    /* ---- TOC tree ---- */
+    function buildTocTree(headings) {
+      var root = { level: 0, children: [] };
+      var stack = [root];
+      headings.forEach(function(h) {
+        var node = { id: h.id, text: h.text, level: h.level, children: [] };
+        while (stack.length > 1 && node.level <= stack[stack.length - 1].level) {
+          stack.pop();
+        }
+        stack[stack.length - 1].children.push(node);
+        stack.push(node);
+      });
+      return root.children;
+    }
+
+    function ensureAncestorsExpanded(tree, targetId) {
+      function walk(nodes) {
+        for (var i = 0; i < nodes.length; i++) {
+          var node = nodes[i];
+          if (node.id === targetId) return true;
+          if (node.children.length > 0 && walk(node.children)) {
+            tocExpandedMap[node.id] = true;
+            return true;
+          }
+        }
+        return false;
       }
-      loadDirectory(buildParentPath(currentDir));
+      walk(tree);
+    }
+
+    function renderTocTree(container, nodes) {
+      container.innerHTML = '';
+      function renderNodes(parentEl, nodeList) {
+        nodeList.forEach(function(node) {
+          var li = document.createElement('div');
+          li.className = 'toc-node';
+          if (node.id === activeTocId) li.classList.add('is-active');
+
+          var hasChildren = node.children.length > 0;
+          var isExpanded = hasChildren ? tocExpandedMap[node.id] !== false : false;
+          if (hasChildren && !isExpanded) li.classList.add('is-collapsed');
+
+          var row = document.createElement('div');
+          row.className = 'toc-node-row';
+
+          if (hasChildren) {
+            var toggle = document.createElement('button');
+            toggle.className = 'toc-node-toggle';
+            toggle.type = 'button';
+            toggle.textContent = isExpanded ? '\u2212' : '+';
+            toggle.addEventListener('click', (function(nid) {
+              return function(e) {
+                e.stopPropagation();
+                tocExpandedMap[nid] = !tocExpandedMap[nid];
+                renderTocFloat();
+                renderTocDrawerList();
+              };
+            })(node.id));
+            row.appendChild(toggle);
+          } else {
+            var placeholder = document.createElement('span');
+            placeholder.className = 'toc-node-placeholder';
+            row.appendChild(placeholder);
+          }
+
+          var link = document.createElement('a');
+          link.className = 'toc-node-link';
+          link.textContent = node.text;
+          link.title = node.text;
+          link.addEventListener('click', function() {
+            previewFrame.contentWindow.postMessage({ type: 'mkdp:scroll-to', id: node.id }, '*');
+            closeTocDrawer();
+          });
+          row.appendChild(link);
+
+          li.appendChild(row);
+
+          if (hasChildren) {
+            var childContainer = document.createElement('div');
+            childContainer.className = 'toc-node-children';
+            renderNodes(childContainer, node.children);
+            li.appendChild(childContainer);
+          }
+
+          parentEl.appendChild(li);
+        });
+      }
+      var tree = buildTocTree(tocHeadings);
+      renderNodes(container, tree);
+    }
+
+    function renderTocFloat() { renderTocTree(tocFloatList, tocHeadings); }
+    function renderTocDrawerList() { renderTocTree(tocDrawerList, tocHeadings); }
+
+    /* ---- TOC events ---- */
+    window.addEventListener('message', function(event) {
+      if (!event.data || typeof event.data.type !== 'string') return;
+
+      if (event.data.type === 'mkdp:toc') {
+        tocHeadings = event.data.headings || [];
+        activeTocId = '';
+        // Initialize expanded map: h1/h2 expanded, h3+ collapsed
+        tocExpandedMap = {};
+        tocHeadings.forEach(function(h) {
+          tocExpandedMap[h.id] = h.level <= 2;
+        });
+        if (tocHeadings.length > 0) {
+          if (!tocCollapsed) {
+            tocFloat.classList.add('is-visible');
+          }
+          tocToggleBtn.classList.remove('is-hidden');
+        } else {
+          tocFloat.classList.remove('is-visible');
+          tocToggleBtn.classList.add('is-hidden');
+        }
+        renderTocFloat();
+        renderTocDrawerList();
+      }
+
+      if (event.data.type === 'mkdp:active-heading') {
+        activeTocId = event.data.id || '';
+        var tree = buildTocTree(tocHeadings);
+        ensureAncestorsExpanded(tree, activeTocId);
+        renderTocFloat();
+        renderTocDrawerList();
+      }
+
+      if (event.data.type === 'mkdp:state') {
+        docTheme = event.data.theme || 'light';
+        docMermaidPreset = event.data.mermaidPreset || 'modern';
+        docHasMermaid = Boolean(event.data.hasMermaid);
+        updatePopoverActive(colorThemePopover, docTheme);
+        updatePopoverActive(mermaidThemePopover, docMermaidPreset);
+        showDocControls();
+      }
     });
 
-    const initialDir = decodeURIComponent(location.hash.replace(/^#/, '')) || '.';
+    /* ---- TOC float close and toggle ---- */
+    tocFloatClose.addEventListener('click', function() {
+      tocFloat.classList.remove('is-visible');
+      tocCollapsed = true;
+      localStorage.setItem('mkdp-toc-collapsed', '1');
+    });
+
+    /* ---- TOC drawer open/close ---- */
+    function openTocDrawer() {
+      tocDrawerBackdrop.classList.add('is-open');
+      tocDrawer.classList.add('is-open');
+      renderTocDrawerList();
+    }
+    function closeTocDrawer() {
+      tocDrawerBackdrop.classList.remove('is-open');
+      tocDrawer.classList.remove('is-open');
+    }
+
+    tocToggleBtn.addEventListener('click', function() {
+      // On wide screens: toggle the float panel
+      if (window.innerWidth >= 1100) {
+        tocCollapsed = !tocCollapsed;
+        localStorage.setItem('mkdp-toc-collapsed', tocCollapsed ? '1' : '0');
+        if (tocCollapsed) {
+          tocFloat.classList.remove('is-visible');
+        } else if (tocHeadings.length > 0) {
+          tocFloat.classList.add('is-visible');
+          renderTocFloat();
+        }
+      } else {
+        // On narrow screens: open the drawer
+        openTocDrawer();
+      }
+    });
+    tocDrawerClose.addEventListener('click', closeTocDrawer);
+    tocDrawerBackdrop.addEventListener('click', closeTocDrawer);
+
+    /* ---- Init ---- */
+    var initialDir = decodeURIComponent(location.hash.replace(/^#/, '')) || '.';
     loadDirectory(initialDir);
   </script>
 </body>

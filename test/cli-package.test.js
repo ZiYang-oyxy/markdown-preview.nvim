@@ -1,6 +1,7 @@
 const assert = require('assert')
 const childProcess = require('child_process')
 const fs = require('fs')
+const http = require('http')
 const os = require('os')
 const path = require('path')
 
@@ -17,6 +18,19 @@ function runNode(args, options = {}) {
     cwd: repoRoot,
     encoding: 'utf8',
     ...options
+  })
+}
+
+function requestText(url) {
+  return new Promise((resolve, reject) => {
+    http.get(url, (res) => {
+      let body = ''
+      res.setEncoding('utf8')
+      res.on('data', (chunk) => {
+        body += chunk
+      })
+      res.on('end', () => resolve({ statusCode: res.statusCode, body }))
+    }).on('error', reject)
   })
 }
 
@@ -118,13 +132,41 @@ function testBuildCliPackageCopiesAssets() {
   }
 }
 
-function main() {
+async function testBrowseShellUsesCurrentToolboxUi() {
+  const { createStandaloneBrowseSession } = require(path.join(cliRoot, 'lib', 'runtime'))
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mkdp-cli-browse-'))
+  let session
+
+  try {
+    ensureFile(path.join(tempRoot, 'README.md'), '# Toolbox browse\n')
+    session = await createStandaloneBrowseSession({ root: tempRoot }, { defaultRoot: tempRoot })
+    const response = await requestText(`${session.origin}/_mkdp/browse`)
+
+    assert.strictEqual(response.statusCode, 200)
+    assert.match(response.body, /class="sidebar-search"/)
+    assert.match(response.body, /id="collapse-btn"/)
+    assert.match(response.body, /id="content-topbar"/)
+    assert.match(response.body, /id="theme-btn"/)
+    assert.match(response.body, /id="export-btn"/)
+  } finally {
+    if (session) {
+      await session.close()
+    }
+    fs.rmSync(tempRoot, { recursive: true, force: true })
+  }
+}
+
+async function main() {
   testPackageMetadata()
   testCliHelpAndVersion()
   testPreviewRequiresExplicitInput()
   testAssetLayoutResolvesPackageAssets()
   testBuildCliPackageCopiesAssets()
+  await testBrowseShellUsesCurrentToolboxUi()
   process.stdout.write('cli package tests: ok\n')
 }
 
-main()
+main().catch((error) => {
+  process.stderr.write(`${error.stack || error.message || String(error)}\n`)
+  process.exitCode = 1
+})

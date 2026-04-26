@@ -155,12 +155,14 @@ export default class PreviewPage extends React.Component {
     this.updateTocItems = this.updateTocItems.bind(this)
     this.handleWindowKeydown = this.handleWindowKeydown.bind(this)
     this.handleWindowScroll = this.handleWindowScroll.bind(this)
+    this.handleParentMessage = this.handleParentMessage.bind(this)
     this.updateActiveHeadingByScroll = this.updateActiveHeadingByScroll.bind(this)
     this.syncTocNavToActiveItem = this.syncTocNavToActiveItem.bind(this)
     this.renderMermaidDiagrams = this.renderMermaidDiagrams.bind(this)
     this.renderPageActions = this.renderPageActions.bind(this)
     this.setThemeMode = this.setThemeMode.bind(this)
     this.setMermaidThemePreset = this.setMermaidThemePreset.bind(this)
+    this.postStateToParent = this.postStateToParent.bind(this)
   }
 
   setThemeMode(theme) {
@@ -168,6 +170,7 @@ export default class PreviewPage extends React.Component {
       theme
     }, () => {
       this.renderMermaidDiagrams()
+      this.postStateToParent()
     })
   }
 
@@ -189,6 +192,7 @@ export default class PreviewPage extends React.Component {
       mermaidThemePresetTouched: true
     }, () => {
       this.renderMermaidDiagrams()
+      this.postStateToParent()
     })
   }
 
@@ -378,7 +382,40 @@ export default class PreviewPage extends React.Component {
       }
     }, () => {
       this.setupHeadingObserver()
+      this.postTocToParent()
     })
+  }
+
+  postTocToParent() {
+    if (typeof window === 'undefined' || !window.parent || window.parent === window) {
+      return
+    }
+    try {
+      window.parent.postMessage({
+        type: 'mkdp:toc',
+        headings: this.state.tocItems.map((item) => ({
+          id: item.id,
+          text: item.text,
+          level: item.level
+        }))
+      }, '*')
+    } catch (_) {}
+  }
+
+  postStateToParent() {
+    if (typeof window === 'undefined' || !window.parent || window.parent === window) {
+      return
+    }
+    const hasMermaid = typeof document !== 'undefined' &&
+      document.querySelectorAll('.mermaid').length > 0
+    try {
+      window.parent.postMessage({
+        type: 'mkdp:state',
+        theme: this.state.theme || 'light',
+        mermaidPreset: this.getActiveMermaidThemePreset(),
+        hasMermaid: hasMermaid
+      }, '*')
+    } catch (_) {}
   }
 
   handleTocJump(event, id) {
@@ -427,6 +464,40 @@ export default class PreviewPage extends React.Component {
       this.tocScrollFrame = null
       this.updateActiveHeadingByScroll()
     })
+  }
+
+  handleParentMessage(event) {
+    if (!event.data || typeof event.data.type !== 'string') {
+      return
+    }
+    if (event.data.type === 'mkdp:scroll-to') {
+      const id = event.data.id
+      if (id) {
+        scrollToHashTarget(`#${id}`)
+      }
+      return
+    }
+    if (event.data.type === 'mkdp:set-theme') {
+      const theme = event.data.theme
+      if (theme && ['light', 'dark'].includes(theme)) {
+        this.setThemeMode(theme)
+      }
+      return
+    }
+    if (event.data.type === 'mkdp:set-mermaid-theme') {
+      const preset = event.data.preset
+      if (preset && MERMAID_THEME_PRESETS.includes(preset)) {
+        this.setMermaidThemePreset(preset)
+      }
+      return
+    }
+    if (event.data.type === 'mkdp:export') {
+      const exportBtn = document.getElementById('mkdp-export-btn')
+      if (exportBtn && !exportBtn.disabled) {
+        exportBtn.click()
+      }
+      return
+    }
   }
 
   setupHeadingObserver() {
@@ -487,7 +558,16 @@ export default class PreviewPage extends React.Component {
     })
 
     if (nextActiveId && nextActiveId !== this.state.activeTocId) {
-      this.setState({ activeTocId: nextActiveId })
+      this.setState({ activeTocId: nextActiveId }, () => {
+        if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+          try {
+            window.parent.postMessage({
+              type: 'mkdp:active-heading',
+              id: nextActiveId
+            }, '*')
+          } catch (_) {}
+        }
+      })
     }
   }
 
@@ -573,8 +653,12 @@ export default class PreviewPage extends React.Component {
     const pathTokens = window.location.pathname.split('/').filter(Boolean)
     const bufnr = parseFloat(pathTokens[pathTokens.length - 1] || '1')
     this.startSocket(bufnr, this.getBrowsePath())
+    if (this.getBrowsePath()) {
+      document.documentElement.classList.add('mkdp-browse-mode')
+    }
     window.addEventListener('keydown', this.handleWindowKeydown)
     window.addEventListener('scroll', this.handleWindowScroll, { passive: true })
+    window.addEventListener('message', this.handleParentMessage)
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -613,6 +697,7 @@ export default class PreviewPage extends React.Component {
 
     window.removeEventListener('keydown', this.handleWindowKeydown)
     window.removeEventListener('scroll', this.handleWindowScroll)
+    window.removeEventListener('message', this.handleParentMessage)
     closePreviewInteractions()
     this.cleanupHeadingObserver()
   }
@@ -772,6 +857,7 @@ export default class PreviewPage extends React.Component {
           renderDot()
           window.setTimeout(() => bindPreviewInteractions(document), 0)
           this.updateTocItems()
+          this.postStateToParent()
         }
         refreshScroll()
       })

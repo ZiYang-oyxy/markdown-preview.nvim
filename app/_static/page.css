@@ -692,3 +692,37 @@ main {
     background-size: 4px 4px, 4px 4px;
   }
 }
+
+/* Hide built-in TOC when rendered inside browse shell iframe */
+.mkdp-browse-mode #toc-panel,
+.mkdp-browse-mode #toc-mobile-open-btn,
+.mkdp-browse-mode #toc-drawer-backdrop {
+  display: none !important;
+}
+
+.mkdp-browse-mode #page-shell.has-toc #content-col {
+  margin-left: 0;
+}
+
+/* Hide document header and toolbar when inside browse shell iframe */
+.mkdp-browse-mode #page-header,
+.mkdp-browse-mode .mkdp-page-toolbar {
+  display: none !important;
+}
+
+/* In browse mode, markdown-body always gets full border-radius since no header is above it */
+.mkdp-browse-mode #page-ctn .markdown-body {
+  border-radius: 14px;
+}
+
+/* Remove outer padding and background gradient in browse mode for seamless iframe fit */
+.mkdp-browse-mode main {
+  padding: 8px 12px 12px;
+  background: var(--secondary-background-color);
+}
+
+/* Force single-column layout in browse mode (no built-in TOC column) */
+.mkdp-browse-mode #page-shell,
+.mkdp-browse-mode #page-shell.has-toc {
+  grid-template-columns: minmax(0, 1fr);
+}
