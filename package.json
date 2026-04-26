@@ -16,6 +16,7 @@
     "build-app": "node ./scripts/mkdp-build-app.js",
     "build-lib": "tsc -p ./",
     "build": "tsc -p ./ && node ./scripts/mkdp-build-app.js && cd app && yarn && pkg --targets node16-linux-x64,node16-macos-x64,node16-win-x64 --out-path ./bin . && rm -rf ./node_modules ./.next",
+    "release:github": "node ./scripts/mkdp-release-github.js",
     "browse": "node ./scripts/mkdp-browse.js",
     "export-html": "node ./scripts/mkdp-export-html.js",
     "preview-open": "node ./scripts/mkdp-open-preview.js",
