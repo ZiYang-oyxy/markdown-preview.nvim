@@ -21,6 +21,7 @@ async function withTempTree(run) {
     await fs.promises.writeFile(path.join(tempRoot, 'docs', 'guide.md'), '# Guide\n\nHello\n', 'utf8')
     await fs.promises.writeFile(path.join(tempRoot, 'notes', 'plain.txt'), 'just text\n', 'utf8')
     await fs.promises.writeFile(path.join(tempRoot, 'notes', 'binary.bin'), Buffer.from([0, 159, 146, 150]))
+    await fs.promises.writeFile(path.join(tempRoot, 'notes', 'Makefile'), 'all:\n\techo hello\n', 'utf8')
 
     const outsideFile = path.join(tempRoot, '..', 'outside.txt')
     await fs.promises.writeFile(outsideFile, 'outside root\n', 'utf8')
@@ -83,6 +84,19 @@ async function main() {
     const binaryFallback = await readBrowseFile(root, 'notes/binary.bin')
     assert.strictEqual(binaryFallback.kind, 'fallback')
     assert.strictEqual(binaryFallback.fallback, 'download')
+
+    // Binary files should be excluded from directory listing
+    const notesListingFiltered = await listBrowseDirectory(root, 'notes')
+    const binaryEntry = notesListingFiltered.entries.find((entry) => entry.name === 'binary.bin')
+    assert.strictEqual(binaryEntry, undefined, 'binary.bin should be filtered from directory listing')
+
+    // Text files should still appear
+    const textEntry = notesListingFiltered.entries.find((entry) => entry.name === 'plain.txt')
+    assert.ok(textEntry, 'plain.txt should still appear in directory listing')
+
+    // Extensionless displayable files should appear
+    const makefileEntry = notesListingFiltered.entries.find((entry) => entry.name === 'Makefile')
+    assert.ok(makefileEntry, 'Makefile should appear in directory listing')
 
     assert.throws(
       () => resolveBrowseTarget(root, '../outside.txt'),
