@@ -28,6 +28,11 @@ flowchart TD
 
 ## 标准命令
 
+Browse UI release 和 Toolbox release 是两条发布线：
+
+- Browse UI：使用 `browse-v<version>` tag 和 `yarn release:github`。
+- Toolbox CLI：使用 `toolbox-v<version>` tag，按 [toolbox-release-sop.md](toolbox-release-sop.md) 打包并上传 tarball。
+
 先运行验证：
 
 ```bash
