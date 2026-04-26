@@ -162,6 +162,7 @@ export default class PreviewPage extends React.Component {
     this.renderPageActions = this.renderPageActions.bind(this)
     this.setThemeMode = this.setThemeMode.bind(this)
     this.setMermaidThemePreset = this.setMermaidThemePreset.bind(this)
+    this.postStateToParent = this.postStateToParent.bind(this)
   }
 
   setThemeMode(theme) {
@@ -169,6 +170,7 @@ export default class PreviewPage extends React.Component {
       theme
     }, () => {
       this.renderMermaidDiagrams()
+      this.postStateToParent()
     })
   }
 
@@ -190,6 +192,7 @@ export default class PreviewPage extends React.Component {
       mermaidThemePresetTouched: true
     }, () => {
       this.renderMermaidDiagrams()
+      this.postStateToParent()
     })
   }
 
@@ -399,6 +402,22 @@ export default class PreviewPage extends React.Component {
     } catch (_) {}
   }
 
+  postStateToParent() {
+    if (typeof window === 'undefined' || !window.parent || window.parent === window) {
+      return
+    }
+    const hasMermaid = typeof document !== 'undefined' &&
+      document.querySelectorAll('.mermaid').length > 0
+    try {
+      window.parent.postMessage({
+        type: 'mkdp:state',
+        theme: this.state.theme || 'light',
+        mermaidPreset: this.getActiveMermaidThemePreset(),
+        hasMermaid: hasMermaid
+      }, '*')
+    } catch (_) {}
+  }
+
   handleTocJump(event, id) {
     event.preventDefault()
     this.setState({ activeTocId: id, isTocDrawerOpen: false }, () => {
@@ -448,12 +467,36 @@ export default class PreviewPage extends React.Component {
   }
 
   handleParentMessage(event) {
-    if (!event.data || event.data.type !== 'mkdp:scroll-to') {
+    if (!event.data || typeof event.data.type !== 'string') {
       return
     }
-    const id = event.data.id
-    if (id) {
-      scrollToHashTarget(`#${id}`)
+    if (event.data.type === 'mkdp:scroll-to') {
+      const id = event.data.id
+      if (id) {
+        scrollToHashTarget(`#${id}`)
+      }
+      return
+    }
+    if (event.data.type === 'mkdp:set-theme') {
+      const theme = event.data.theme
+      if (theme && ['light', 'dark'].includes(theme)) {
+        this.setThemeMode(theme)
+      }
+      return
+    }
+    if (event.data.type === 'mkdp:set-mermaid-theme') {
+      const preset = event.data.preset
+      if (preset && MERMAID_THEME_PRESETS.includes(preset)) {
+        this.setMermaidThemePreset(preset)
+      }
+      return
+    }
+    if (event.data.type === 'mkdp:export') {
+      const exportBtn = document.getElementById('mkdp-export-btn')
+      if (exportBtn && !exportBtn.disabled) {
+        exportBtn.click()
+      }
+      return
     }
   }
 
@@ -814,6 +857,7 @@ export default class PreviewPage extends React.Component {
           renderDot()
           window.setTimeout(() => bindPreviewInteractions(document), 0)
           this.updateTocItems()
+          this.postStateToParent()
         }
         refreshScroll()
       })
