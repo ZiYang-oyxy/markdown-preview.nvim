@@ -89,10 +89,33 @@ function testCollapsedStateTargetsSidebar() {
   )
 }
 
+function testTocToggleKeepsDrawerOnNarrowScreens() {
+  const html = buildBrowseShellHtml()
+  const script = extractScript(html)
+
+  assert.ok(
+    script.includes('if (window.innerWidth >= 1100)'),
+    'toc toggle should keep a wide-screen branch'
+  )
+  assert.ok(
+    script.includes('openTocDrawer();'),
+    'toc toggle should still open drawer on narrow screens'
+  )
+  assert.ok(
+    script.includes('showTocSidebar();'),
+    'wide-screen expand should show the fixed toc sidebar'
+  )
+  assert.ok(
+    script.includes('hideTocSidebar();'),
+    'wide-screen collapse should hide the fixed toc sidebar'
+  )
+}
+
 function main() {
   testTocSidebarIsWorkspaceColumn()
   testFloatingTocIsRemovedFromWideLayout()
   testCollapsedStateTargetsSidebar()
+  testTocToggleKeepsDrawerOnNarrowScreens()
   process.stdout.write('browse fixed toc sidebar tests: ok\n')
 }
 

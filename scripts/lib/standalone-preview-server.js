@@ -358,9 +358,21 @@ function buildBrowseShellHtml() {
     .topbar-btn:hover { color: var(--text); border-color: var(--accent); }
     .topbar-btn.is-hidden { display: none; }
 
+    /* ---- Content workspace ---- */
+    .content-workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 0;
+    }
+    .content-workspace.toc-collapsed {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     /* ---- Content body ---- */
     .content-body {
-      flex: 1;
+      min-width: 0;
       min-height: 0;
       position: relative;
       display: flex;
@@ -416,29 +428,37 @@ function buildBrowseShellHtml() {
     .fallback-card a { color: var(--accent); text-decoration: none; font-weight: 600; }
     .fallback-card a:hover { text-decoration: underline; }
 
-    /* ---- Floating TOC ---- */
-    .toc-float {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 200px;
-      max-height: calc(100% - 24px);
-      overflow-y: auto;
+    /* ---- TOC Sidebar ---- */
+    .toc-sidebar {
+      min-width: 0;
+      overflow: hidden;
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 12px;
+      border-left: 1px solid var(--border);
       display: none;
-      z-index: 5;
+      flex-direction: column;
     }
-    .toc-float.is-visible { display: block; }
+    .toc-sidebar.is-visible { display: flex; }
+    .toc-sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 12px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
     .toc-title {
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--muted);
-      margin-bottom: 10px;
+    }
+    .toc-sidebar-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 10px 10px 12px;
     }
     .toc-tree { list-style: none; margin: 0; padding: 0; }
     .toc-node { margin: 1px 0; }
@@ -561,11 +581,13 @@ function buildBrowseShellHtml() {
     }
 
     /* ---- Responsive ---- */
-    @media (min-width: 1100px) {
-      .toc-float.is-visible { display: block; }
-    }
     @media (max-width: 1099px) {
-      .toc-float { display: none !important; }
+      .content-workspace {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .toc-sidebar {
+        display: none !important;
+      }
     }
     @media (max-width: 959px) {
       .sidebar:not(.is-collapsed) {
@@ -634,20 +656,24 @@ function buildBrowseShellHtml() {
           <a class="topbar-btn is-hidden" id="raw-link" title="Download raw" target="_blank" rel="noopener">${esc(icons.download)}</a>
         </div>
       </div>
-      <div class="content-body" id="content-body">
-        <div class="welcome-screen" id="welcome-screen">
-          <h2>Markdown Preview</h2>
-          <p>Select a file from the sidebar to get started.</p>
-        </div>
-        <iframe id="preview-frame" class="preview-frame" title="Markdown preview"></iframe>
-        <div id="fallback-view" class="fallback-view"></div>
-        <div class="toc-float" id="toc-float">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div class="toc-title">On this page</div>
-            <button class="toc-drawer-close" id="toc-float-close" type="button" title="Close">&times;</button>
+      <div class="content-workspace" id="content-workspace">
+        <div class="content-body" id="content-body">
+          <div class="welcome-screen" id="welcome-screen">
+            <h2>Markdown Preview</h2>
+            <p>Select a file from the sidebar to get started.</p>
           </div>
-          <div class="toc-tree" id="toc-float-list"></div>
+          <iframe id="preview-frame" class="preview-frame" title="Markdown preview"></iframe>
+          <div id="fallback-view" class="fallback-view"></div>
         </div>
+        <aside class="toc-sidebar" id="toc-sidebar" aria-label="Table of contents">
+          <div class="toc-sidebar-header">
+            <div class="toc-title">On this page</div>
+            <button class="toc-drawer-close" id="toc-sidebar-close" type="button" title="Close">&times;</button>
+          </div>
+          <div class="toc-sidebar-body">
+            <div class="toc-tree" id="toc-sidebar-list"></div>
+          </div>
+        </aside>
       </div>
     </section>
   </div>
@@ -695,8 +721,9 @@ function buildBrowseShellHtml() {
     var previewFrame = document.getElementById('preview-frame');
     var fallbackView = document.getElementById('fallback-view');
     var sidebarTitle = document.getElementById('sidebar-title');
-    var tocFloat = document.getElementById('toc-float');
-    var tocFloatList = document.getElementById('toc-float-list');
+    var contentWorkspace = document.getElementById('content-workspace');
+    var tocSidebar = document.getElementById('toc-sidebar');
+    var tocSidebarList = document.getElementById('toc-sidebar-list');
     var tocDrawerBackdrop = document.getElementById('toc-drawer-backdrop');
     var tocDrawer = document.getElementById('toc-drawer');
     var tocDrawerClose = document.getElementById('toc-drawer-close');
@@ -709,7 +736,7 @@ function buildBrowseShellHtml() {
     var mermaidThemePopover = document.getElementById('mermaid-theme-popover');
     var exportBtn = document.getElementById('export-btn');
     var docControlsSep = document.getElementById('doc-controls-sep');
-    var tocFloatClose = document.getElementById('toc-float-close');
+    var tocSidebarClose = document.getElementById('toc-sidebar-close');
 
     /* ---- State ---- */
     var currentDir = '.';
@@ -1059,7 +1086,7 @@ function buildBrowseShellHtml() {
       fallbackView.classList.remove('is-visible');
       fallbackView.innerHTML = '';
       contentTopbar.classList.remove('is-visible');
-      tocFloat.classList.remove('is-visible');
+      hideTocSidebar();
       tocHeadings = [];
       activeTocId = '';
       tocToggleBtn.classList.add('is-hidden');
@@ -1081,7 +1108,7 @@ function buildBrowseShellHtml() {
       previewFrame.removeAttribute('src');
       fallbackView.innerHTML = html;
       fallbackView.classList.add('is-visible');
-      tocFloat.classList.remove('is-visible');
+      hideTocSidebar();
       tocHeadings = [];
       activeTocId = '';
       tocToggleBtn.classList.add('is-hidden');
@@ -1131,6 +1158,16 @@ function buildBrowseShellHtml() {
       } catch (error) {
         showFallback('<div style="padding:16px;color:var(--blocked-color)">' + escHtml(error.message || String(error)) + '</div>');
       }
+    }
+
+    function showTocSidebar() {
+      contentWorkspace.classList.remove('toc-collapsed');
+      tocSidebar.classList.add('is-visible');
+    }
+
+    function hideTocSidebar() {
+      tocSidebar.classList.remove('is-visible');
+      contentWorkspace.classList.add('toc-collapsed');
     }
 
     /* ---- TOC tree ---- */
@@ -1187,7 +1224,7 @@ function buildBrowseShellHtml() {
               return function(e) {
                 e.stopPropagation();
                 tocExpandedMap[nid] = !tocExpandedMap[nid];
-                renderTocFloat();
+                renderTocSidebar();
                 renderTocDrawerList();
               };
             })(node.id));
@@ -1224,7 +1261,7 @@ function buildBrowseShellHtml() {
       renderNodes(container, tree);
     }
 
-    function renderTocFloat() { renderTocTree(tocFloatList, tocHeadings); }
+    function renderTocSidebar() { renderTocTree(tocSidebarList, tocHeadings); }
     function renderTocDrawerList() { renderTocTree(tocDrawerList, tocHeadings); }
 
     /* ---- TOC events ---- */
@@ -1240,15 +1277,17 @@ function buildBrowseShellHtml() {
           tocExpandedMap[h.id] = h.level <= 2;
         });
         if (tocHeadings.length > 0) {
-          if (!tocCollapsed) {
-            tocFloat.classList.add('is-visible');
+          if (!tocCollapsed && window.innerWidth >= 1100) {
+            showTocSidebar();
+          } else {
+            hideTocSidebar();
           }
           tocToggleBtn.classList.remove('is-hidden');
         } else {
-          tocFloat.classList.remove('is-visible');
+          hideTocSidebar();
           tocToggleBtn.classList.add('is-hidden');
         }
-        renderTocFloat();
+        renderTocSidebar();
         renderTocDrawerList();
       }
 
@@ -1256,7 +1295,7 @@ function buildBrowseShellHtml() {
         activeTocId = event.data.id || '';
         var tree = buildTocTree(tocHeadings);
         ensureAncestorsExpanded(tree, activeTocId);
-        renderTocFloat();
+        renderTocSidebar();
         renderTocDrawerList();
       }
 
@@ -1270,9 +1309,9 @@ function buildBrowseShellHtml() {
       }
     });
 
-    /* ---- TOC float close and toggle ---- */
-    tocFloatClose.addEventListener('click', function() {
-      tocFloat.classList.remove('is-visible');
+    /* ---- TOC sidebar close and toggle ---- */
+    tocSidebarClose.addEventListener('click', function() {
+      hideTocSidebar();
       tocCollapsed = true;
       localStorage.setItem('mkdp-toc-collapsed', '1');
     });
@@ -1292,12 +1331,15 @@ function buildBrowseShellHtml() {
       // On wide screens: toggle the float panel
       if (window.innerWidth >= 1100) {
         tocCollapsed = !tocCollapsed;
-        localStorage.setItem('mkdp-toc-collapsed', tocCollapsed ? '1' : '0');
         if (tocCollapsed) {
-          tocFloat.classList.remove('is-visible');
+          localStorage.setItem('mkdp-toc-collapsed', '1');
+          hideTocSidebar();
         } else if (tocHeadings.length > 0) {
-          tocFloat.classList.add('is-visible');
-          renderTocFloat();
+          localStorage.setItem('mkdp-toc-collapsed', '0');
+          showTocSidebar();
+          renderTocSidebar();
+        } else {
+          localStorage.setItem('mkdp-toc-collapsed', '0');
         }
       } else {
         // On narrow screens: open the drawer
