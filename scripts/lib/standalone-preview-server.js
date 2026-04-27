@@ -8,6 +8,7 @@ const {
   listBrowseDirectory,
   readBrowseFile,
   resolveBrowseTarget,
+  searchBrowseFiles,
 } = require("./browse-service");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
@@ -145,10 +146,15 @@ function buildBrowseShellHtml() {
       flex-shrink: 0;
     }
     .sidebar-topbar .title {
+      flex: 1;
+      min-width: 0;
       font-size: 14px;
       font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
+      direction: rtl;
+      text-align: left;
     }
     .sidebar-topbar .collapse-btn {
       display: inline-flex;
@@ -273,8 +279,8 @@ function buildBrowseShellHtml() {
     .file-item[disabled]:hover { background: transparent; }
     .file-icon { display: inline-flex; align-items: center; flex-shrink: 0; }
     .file-info { flex: 1; min-width: 0; }
-    .file-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .file-meta { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .file-name { display: block; overflow-wrap: anywhere; word-break: break-word; line-height: 1.25; }
+    .file-meta { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; word-break: break-word; }
     .file-arrow { display: inline-flex; align-items: center; color: var(--muted); flex-shrink: 0; }
 
     /* Collapsed sidebar: hide everything except icon strip */
@@ -583,7 +589,7 @@ function buildBrowseShellHtml() {
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-topbar">
-        <span class="title">Files</span>
+        <span class="title" id="sidebar-title" title="Files">Files</span>
         <button class="collapse-btn" id="collapse-btn" type="button" title="Collapse sidebar">${esc(icons.chevronLeft)}</button>
       </div>
       <div class="sidebar-search">
@@ -688,6 +694,7 @@ function buildBrowseShellHtml() {
     var welcomeScreen = document.getElementById('welcome-screen');
     var previewFrame = document.getElementById('preview-frame');
     var fallbackView = document.getElementById('fallback-view');
+    var sidebarTitle = document.getElementById('sidebar-title');
     var tocFloat = document.getElementById('toc-float');
     var tocFloatList = document.getElementById('toc-float-list');
     var tocDrawerBackdrop = document.getElementById('toc-drawer-backdrop');
@@ -708,6 +715,7 @@ function buildBrowseShellHtml() {
     var currentDir = '.';
     var selectedPath = '';
     var allEntries = [];
+    var searchEntries = null;
     var tocHeadings = [];
     var activeTocId = '';
     var sidebarCollapsed = localStorage.getItem('mkdp-sidebar-collapsed') === '1';
@@ -861,6 +869,12 @@ function buildBrowseShellHtml() {
       return parts.length ? parts.join('/') : '.';
     }
 
+    function setSidebarTitle(rootPath) {
+      var title = rootPath || 'Files';
+      sidebarTitle.textContent = title;
+      sidebarTitle.title = title;
+    }
+
     /* ---- Breadcrumb ---- */
     function renderBreadcrumb(dir) {
       breadcrumbEl.innerHTML = '';
@@ -904,16 +918,34 @@ function buildBrowseShellHtml() {
     }
 
     /* ---- Search ---- */
-    searchInput.addEventListener('input', function() {
-      var q = searchInput.value.toLowerCase().trim();
-      if (!q) {
+    var searchRequestId = 0;
+
+    async function searchCurrentDirectory(query) {
+      var requestId = ++searchRequestId;
+      if (!query) {
+        searchEntries = null;
         renderFileList(allEntries);
         return;
       }
-      var filtered = allEntries.filter(function(e) {
-        return e.name.toLowerCase().indexOf(q) !== -1;
-      });
-      renderFileList(filtered);
+
+      try {
+        var payload = await apiJson('/_mkdp/browse/search?' + new URLSearchParams({
+          path: currentDir || '.',
+          q: query
+        }).toString());
+        if (requestId !== searchRequestId) return;
+        searchEntries = payload.entries || [];
+        renderFileList(searchEntries);
+      } catch (error) {
+        if (requestId !== searchRequestId) return;
+        searchEntries = [];
+        fileListEl.innerHTML = '<div style="padding:12px 10px;color:var(--blocked-color);font-size:13px">' + escHtml(error.message || String(error)) + '</div>';
+      }
+    }
+
+    searchInput.addEventListener('input', function() {
+      var q = searchInput.value.toLowerCase().trim();
+      searchCurrentDirectory(q);
     });
 
     /* ---- File icons ---- */
@@ -958,6 +990,9 @@ function buildBrowseShellHtml() {
 
         var meta = '';
         if (entry.kind === 'blocked') meta = 'blocked';
+        else if (entry.kind === 'file' && searchInput.value.trim() && entry.relativePath.indexOf('/') !== -1) {
+          meta = entry.relativePath.split('/').slice(0, -1).join('/');
+        }
         else if (entry.isSymlink) meta = 'symlink';
         else if (entry.kind === 'directory') meta = 'folder';
         else if (entry.isMarkdown) meta = 'markdown';
@@ -1005,7 +1040,10 @@ function buildBrowseShellHtml() {
         currentDir = payload.relativePath || '.';
         location.hash = currentDir === '.' ? '' : currentDir;
         allEntries = payload.entries || [];
+        setSidebarTitle(payload.rootPath);
+        searchEntries = null;
         searchInput.value = '';
+        searchRequestId += 1;
         renderBreadcrumb(currentDir);
         renderFileList(allEntries);
       } catch (error) {
@@ -1066,10 +1104,7 @@ function buildBrowseShellHtml() {
     /* ---- Open file ---- */
     async function openFile(relativePath, entry) {
       selectedPath = relativePath;
-      renderFileList(allEntries.filter(function(e) {
-        if (!searchInput.value.trim()) return true;
-        return e.name.toLowerCase().indexOf(searchInput.value.toLowerCase().trim()) !== -1;
-      }));
+      renderFileList(searchEntries || allEntries);
 
       try {
         var payload = await apiJson('/_mkdp/browse/file?' + toQuery(relativePath));
@@ -1502,6 +1537,27 @@ async function handleRequest(req, res, context) {
       const payload = await listBrowseDirectory(
         context.browseRoot,
         requestUrl.searchParams.get("path") || "."
+      );
+      sendJson(res, 200, {
+        ok: true,
+        ...payload,
+      });
+    } catch (error) {
+      sendJson(res, error.statusCode || 500, {
+        ok: false,
+        code: error.code || "browse_error",
+        error: error.message || String(error),
+      });
+    }
+    return;
+  }
+
+  if (pathname === "/_mkdp/browse/search") {
+    try {
+      const payload = await searchBrowseFiles(
+        context.browseRoot,
+        requestUrl.searchParams.get("path") || ".",
+        requestUrl.searchParams.get("q") || ""
       );
       sendJson(res, 200, {
         ok: true,

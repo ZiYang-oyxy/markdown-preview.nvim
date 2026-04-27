@@ -278,6 +278,95 @@ async function listBrowseDirectory(rootDir, requestPath = '.') {
   }
 }
 
+async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
+  const resolved = resolveBrowseTarget(rootDir, requestPath)
+  const stat = await fs.promises.stat(resolved.realPath)
+  if (!stat.isDirectory()) {
+    throw createBrowseError(400, 'not_directory', 'browse search target must be a directory')
+  }
+
+  const normalizedQuery = String(query || '').toLowerCase().trim()
+  if (!normalizedQuery) {
+    return {
+      rootPath: resolved.rootRealPath,
+      relativePath: toDisplayRelativePath(resolved.relativePath),
+      entries: []
+    }
+  }
+
+  const entries = []
+  const visitedDirectories = new Set([resolved.realPath])
+
+  async function walk(directoryRealPath, directoryRelativePath) {
+    const directoryEntries = await fs.promises.readdir(directoryRealPath, { withFileTypes: true })
+
+    for (const entry of directoryEntries) {
+      const entryRelativePath = directoryRelativePath ? `${directoryRelativePath}/${entry.name}` : entry.name
+      const entryAbsolutePath = path.join(directoryRealPath, entry.name)
+      const entryLstat = await fs.promises.lstat(entryAbsolutePath)
+      const isSymlink = entryLstat.isSymbolicLink()
+      let entryRealPath = entryAbsolutePath
+      let outsideRoot = false
+      let entryStat = entryLstat
+
+      if (isSymlink) {
+        try {
+          entryRealPath = getRealPath(entryAbsolutePath)
+          outsideRoot = !ensureInsideRoot(resolved.rootRealPath, entryRealPath)
+          if (!outsideRoot) {
+            entryStat = await fs.promises.stat(entryRealPath)
+          }
+        } catch (error) {
+          outsideRoot = true
+        }
+      }
+
+      if (outsideRoot) {
+        continue
+      }
+
+      if (entryStat.isDirectory()) {
+        if (isIgnoredBrowseDirectory(entryRelativePath, entry.name)) {
+          continue
+        }
+
+        const directoryRealTarget = getRealPath(entryRealPath)
+        if (!visitedDirectories.has(directoryRealTarget)) {
+          visitedDirectories.add(directoryRealTarget)
+          await walk(directoryRealTarget, entryRelativePath)
+        }
+        continue
+      }
+
+      if (!entryStat.isFile() || !isDisplayableFile(entryRealPath)) {
+        continue
+      }
+
+      if (!entry.name.toLowerCase().includes(normalizedQuery)) {
+        continue
+      }
+
+      entries.push({
+        name: entry.name,
+        relativePath: entryRelativePath,
+        kind: 'file',
+        isMarkdown: isMarkdownPath(entryRealPath),
+        isSymlink
+      })
+    }
+  }
+
+  await walk(resolved.realPath, resolved.relativePath)
+
+  entries.sort((left, right) => left.relativePath.localeCompare(right.relativePath))
+
+  return {
+    rootPath: resolved.rootRealPath,
+    relativePath: toDisplayRelativePath(resolved.relativePath),
+    entries
+  }
+}
+
 async function readBrowseFile(rootDir, requestPath) {
   const resolved = resolveBrowseTarget(rootDir, requestPath)
   const stat = await fs.promises.stat(resolved.realPath)
@@ -341,5 +430,6 @@ module.exports = {
   listBrowseDirectory,
   normalizeRelativeRequestPath,
   readBrowseFile,
-  resolveBrowseTarget
+  resolveBrowseTarget,
+  searchBrowseFiles
 }

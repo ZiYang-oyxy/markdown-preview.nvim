@@ -5,6 +5,7 @@ const path = require('path')
 
 const {
   listBrowseDirectory,
+  searchBrowseFiles,
   readBrowseFile,
   resolveBrowseTarget
 } = require('../scripts/lib/browse-service')
@@ -17,9 +18,13 @@ async function withTempTree(run) {
     await fs.promises.mkdir(path.join(tempRoot, '.git'))
     await fs.promises.mkdir(path.join(tempRoot, 'node_modules'))
     await fs.promises.mkdir(path.join(tempRoot, 'notes'))
+    await fs.promises.mkdir(path.join(tempRoot, 'notes', 'deep'))
 
     await fs.promises.writeFile(path.join(tempRoot, 'docs', 'guide.md'), '# Guide\n\nHello\n', 'utf8')
     await fs.promises.writeFile(path.join(tempRoot, 'notes', 'plain.txt'), 'just text\n', 'utf8')
+    await fs.promises.writeFile(path.join(tempRoot, 'notes', 'deep', 'alpha-phase.md'), '# Phase\n', 'utf8')
+    await fs.promises.writeFile(path.join(tempRoot, 'notes', 'deep', 'phase.bin'), Buffer.from([0, 159, 146, 150]))
+    await fs.promises.writeFile(path.join(tempRoot, 'node_modules', 'hidden-phase.md'), '# Hidden\n', 'utf8')
     await fs.promises.writeFile(path.join(tempRoot, 'notes', 'binary.bin'), Buffer.from([0, 159, 146, 150]))
     await fs.promises.writeFile(path.join(tempRoot, 'notes', 'Makefile'), 'all:\n\techo hello\n', 'utf8')
 
@@ -97,6 +102,18 @@ async function main() {
     // Extensionless displayable files should appear
     const makefileEntry = notesListingFiltered.entries.find((entry) => entry.name === 'Makefile')
     assert.ok(makefileEntry, 'Makefile should appear in directory listing')
+
+    const recursiveSearch = await searchBrowseFiles(root, '.', 'ph')
+    assert.strictEqual(recursiveSearch.relativePath, '.')
+    assert.deepStrictEqual(recursiveSearch.entries, [
+      {
+        name: 'alpha-phase.md',
+        relativePath: 'notes/deep/alpha-phase.md',
+        kind: 'file',
+        isMarkdown: true,
+        isSymlink: false
+      }
+    ])
 
     assert.throws(
       () => resolveBrowseTarget(root, '../outside.txt'),
