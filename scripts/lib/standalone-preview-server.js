@@ -1747,4 +1747,5 @@ async function startStandalonePreviewServer(context) {
 
 module.exports = {
   startStandalonePreviewServer,
+  buildBrowseShellHtml,
 };
