@@ -50,6 +50,14 @@ function! mkdp#rpc#start_server() abort
             \ ])
       return
     endif
+    if !filereadable(s:mkdp_root_dir . '/dist/web/index.html') && !filereadable(s:mkdp_root_dir . '/app/out/index.html')
+      call mkdp#util#echo_messages('Error', [
+            \ '[markdown-preview]: runtime web assets are missing.',
+            \ '[markdown-preview]: Run: cd ' . s:mkdp_root_dir . ' && yarn install && yarn build-app',
+            \ '[markdown-preview]: Then restart :MarkdownPreview.',
+            \ ])
+      return
+    endif
     let l:mkdp_server_script = s:mkdp_root_dir . '/app/index.js'
     let l:cmd = ['node', l:mkdp_server_script, '--path', s:mkdp_root_dir . '/app/server.js']
   endif
