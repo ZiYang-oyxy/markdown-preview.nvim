@@ -13,6 +13,10 @@ function! health#mkdp#check() abort
     let l:mkdp_server_script = s:mkdp_root_dir .. '/app/server.js'
     lua vim.health.info('Script: ' .. vim.api.nvim_eval('l:mkdp_server_script'))
     lua vim.health.info('Script exists: ' .. vim.fn.filereadable(vim.api.nvim_eval('l:mkdp_server_script')))
-    lua vim.health.ok('Using node')
+    if isdirectory(s:mkdp_root_dir .. '/app/node_modules/tslib')
+      lua vim.health.ok('Using node')
+    else
+      lua vim.health.warn('Node runtime dependencies are missing. Run: cd ' .. vim.api.nvim_eval('s:mkdp_root_dir') .. '/app && npx --yes yarn install')
+    endif
   endif
 endfunction

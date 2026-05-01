@@ -42,6 +42,14 @@ function! mkdp#rpc#start_server() abort
   if executable(l:mkdp_server_script)
     let l:cmd = [l:mkdp_server_script, '--path', s:mkdp_root_dir . '/app/server.js']
   elseif executable('node')
+    if !isdirectory(s:mkdp_root_dir . '/app/node_modules/tslib')
+      call mkdp#util#echo_messages('Error', [
+            \ '[markdown-preview]: Node runtime dependencies are missing.',
+            \ '[markdown-preview]: Run: cd ' . s:mkdp_root_dir . '/app && npx --yes yarn install',
+            \ '[markdown-preview]: Or configure your plugin manager build step to run that command.',
+            \ ])
+      return
+    endif
     let l:mkdp_server_script = s:mkdp_root_dir . '/app/index.js'
     let l:cmd = ['node', l:mkdp_server_script, '--path', s:mkdp_root_dir . '/app/server.js']
   endif
