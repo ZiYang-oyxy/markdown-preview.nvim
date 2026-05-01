@@ -169,7 +169,8 @@ Plug 'ZiYang-oyxy/markdown-preview', {
 
 #### Option B: Node runtime inside the plugin
 
-Install the app runtime dependencies under `app/`:
+Install the root build dependencies, export the web assets, and install the app
+runtime dependencies under `app/`:
 
 ```lua
 {
@@ -182,7 +183,7 @@ Install the app runtime dependencies under `app/`:
     "MarkdownPreviewExport",
     "MarkdownPreviewExportFile",
   },
-  build = "cd app && npx --yes yarn install",
+  build = "yarn install && yarn build-app && cd app && npx --yes yarn install",
 }
 ```
 
@@ -190,7 +191,7 @@ Equivalent `vim-plug` example:
 
 ```vim
 Plug 'ZiYang-oyxy/markdown-preview', {
-      \ 'do': 'cd app && npx --yes yarn install',
+      \ 'do': 'yarn install && yarn build-app && cd app && npx --yes yarn install',
       \ 'for': ['markdown', 'vim-plug']
       \ }
 ```
@@ -369,7 +370,7 @@ There is no single `yarn test` entry today; run the specific scripts you need.
 - Run `:checkhealth mkdp` in Neovim.
 - Make sure you completed one plugin runtime setup path:
   - `call mkdp#util#install()` downloaded the prebuilt runtime into `app/bin`, or
-  - `cd app && npx --yes yarn install` installed the Node runtime dependencies.
+  - `yarn install && yarn build-app && cd app && npx --yes yarn install` built the web assets and installed the Node runtime dependencies.
 - If the default opener is wrong, set `g:mkdp_browser` or `g:mkdp_browserfunc`.
 
 ### `:MarkdownPreviewExportFile` fails

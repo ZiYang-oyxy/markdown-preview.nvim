@@ -167,7 +167,7 @@ Plug 'ZiYang-oyxy/markdown-preview', {
 
 #### 方案 B：插件内使用 Node 运行时
 
-安装 `app/` 下的运行时依赖：
+安装根目录构建依赖，导出 web 资源，并安装 `app/` 下的运行时依赖：
 
 ```lua
 {
@@ -180,7 +180,7 @@ Plug 'ZiYang-oyxy/markdown-preview', {
     "MarkdownPreviewExport",
     "MarkdownPreviewExportFile",
   },
-  build = "cd app && npx --yes yarn install",
+  build = "yarn install && yarn build-app && cd app && npx --yes yarn install",
 }
 ```
 
@@ -188,7 +188,7 @@ Plug 'ZiYang-oyxy/markdown-preview', {
 
 ```vim
 Plug 'ZiYang-oyxy/markdown-preview', {
-      \ 'do': 'cd app && npx --yes yarn install',
+      \ 'do': 'yarn install && yarn build-app && cd app && npx --yes yarn install',
       \ 'for': ['markdown', 'vim-plug']
       \ }
 ```
@@ -367,7 +367,7 @@ yarn preview-test -- --fixture demo
 - 在 Neovim 中运行 `:checkhealth mkdp`
 - 确认你已经完成一个插件运行时安装路径：
   - `call mkdp#util#install()` 已把预构建运行时下载到 `app/bin`
-  - 或者 `cd app && npx --yes yarn install` 已安装 Node 运行时依赖
+  - 或者 `yarn install && yarn build-app && cd app && npx --yes yarn install` 已构建 web 资源并安装 Node 运行时依赖
 - 如果默认 opener 不正确，设置 `g:mkdp_browser` 或 `g:mkdp_browserfunc`
 
 ### `:MarkdownPreviewExportFile` 失败

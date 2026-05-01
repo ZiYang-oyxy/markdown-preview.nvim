@@ -84,9 +84,42 @@ function testPrebuiltLikeLayout() {
   }
 }
 
+function testMissingRuntimeAssetsError() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "mkdp-layout-"));
+  const appRoot = path.join(tempRoot, "app");
+
+  try {
+    fs.mkdirSync(appRoot, { recursive: true });
+    writeRuntimeAssetManifest(appRoot, {
+      version: 1,
+      web: {
+        htmlRoot: "../dist/web",
+        staticRoot: "../dist/static",
+        indexHtml: "../dist/web/index.html",
+        notFoundHtml: "../dist/web/404.html",
+      },
+    });
+
+    assert.throws(
+      () =>
+        resolveRuntimeAssetLayout({
+          appRoot,
+          cwd: tempRoot,
+        }),
+      /runtime web assets are missing.*yarn build-app/s
+    );
+  } finally {
+    fs.rmSync(tempRoot, {
+      recursive: true,
+      force: true,
+    });
+  }
+}
+
 function main() {
   testRepoLayout();
   testPrebuiltLikeLayout();
+  testMissingRuntimeAssetsError();
   process.stdout.write("runtime asset layout tests: ok\n");
 }
 

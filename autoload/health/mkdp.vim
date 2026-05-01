@@ -18,5 +18,10 @@ function! health#mkdp#check() abort
     else
       lua vim.health.warn('Node runtime dependencies are missing. Run: cd ' .. vim.api.nvim_eval('s:mkdp_root_dir') .. '/app && npx --yes yarn install')
     endif
+    if filereadable(s:mkdp_root_dir .. '/dist/web/index.html') || filereadable(s:mkdp_root_dir .. '/app/out/index.html')
+      lua vim.health.ok('Runtime web assets found')
+    else
+      lua vim.health.warn('Runtime web assets are missing. Run: cd ' .. vim.api.nvim_eval('s:mkdp_root_dir') .. ' && yarn install && yarn build-app')
+    endif
   endif
 endfunction

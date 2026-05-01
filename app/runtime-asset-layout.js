@@ -96,6 +96,23 @@ function isUsableLayout(layout) {
   ].every((filePath) => fs.existsSync(filePath));
 }
 
+function formatMissingAssetsError(layout) {
+  const missing = [
+    layout.htmlRoot,
+    layout.staticRoot,
+    layout.indexHtml,
+    layout.notFoundHtml,
+  ].filter((filePath) => !fs.existsSync(filePath));
+
+  return [
+    "markdown-preview runtime web assets are missing.",
+    `Checked manifest: ${layout.manifestPath}`,
+    `Missing: ${missing.join(", ")}`,
+    "Build them with: yarn install && yarn build-app",
+    "Or use the prebuilt runtime installer when release assets are available: call mkdp#util#install()",
+  ].join("\n");
+}
+
 function resolveRuntimeAssetLayout(options = {}) {
   const manifestName = options.manifestName || MANIFEST_NAME;
   const candidates = resolveCandidateAppRoots({
@@ -131,7 +148,7 @@ function resolveRuntimeAssetLayout(options = {}) {
   }
 
   if (fallback) {
-    return fallback;
+    throw new Error(formatMissingAssetsError(fallback));
   }
 
   throw new Error("unable to resolve markdown-preview runtime asset layout");
@@ -150,6 +167,7 @@ function writeRuntimeAssetManifest(appRoot, manifest = DEFAULT_MANIFEST) {
 module.exports = {
   DEFAULT_MANIFEST,
   MANIFEST_NAME,
+  formatMissingAssetsError,
   resolveRuntimeAssetLayout,
   writeRuntimeAssetManifest,
 };
