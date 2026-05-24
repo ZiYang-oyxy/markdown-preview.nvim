@@ -119,6 +119,21 @@ function syncRuntimeAssets() {
   writeRuntimeAssetManifest(appDir, runtimeManifest)
 }
 
+function syncGitIndex() {
+  if (!fs.existsSync(path.join(repoRoot, ".git"))) {
+    return;
+  }
+
+  const result = spawnSync("git", ["add", "-A", "dist"], {
+    cwd: repoRoot,
+    stdio: "inherit",
+  });
+
+  if (result.error) {
+    console.warn(`[build-app] failed to sync dist into git index: ${result.error.message}`);
+  }
+}
+
 function main() {
   fs.rmSync(path.join(appDir, ".next"), {
     recursive: true,
@@ -129,6 +144,7 @@ function main() {
   runNext("build", env);
   runNext("export", env);
   syncRuntimeAssets();
+  syncGitIndex();
 }
 
 main();
