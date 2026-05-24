@@ -174,7 +174,7 @@ exports.run = function () {
     const openToTheWord = await plugin.nvim.getVar('mkdp_open_to_the_world')
     const host = openToTheWord ? '0.0.0.0' : '127.0.0.1'
     let port = await plugin.nvim.getVar('mkdp_port')
-    port = port || (8080 + Number(`${Date.now()}`.slice(-3)))
+    port = port || 43678
     server.listen({
       host,
       port
