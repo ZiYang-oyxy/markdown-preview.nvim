@@ -174,11 +174,24 @@ exports.run = function () {
     const openToTheWord = await plugin.nvim.getVar('mkdp_open_to_the_world')
     const host = openToTheWord ? '0.0.0.0' : '127.0.0.1'
     let port = await plugin.nvim.getVar('mkdp_port')
-    port = port || 43678
+    const userPort = port ? Number(port) : 0
+    const defaultPort = 43678
+    const desiredPort = userPort || defaultPort
+    let fallbackTried = false
+    server.on('error', function (err) {
+      if (err && err.code === 'EADDRINUSE' && !userPort && !fallbackTried) {
+        fallbackTried = true
+        logger.info(`port ${desiredPort} in use, falling back to a random available port`)
+        server.listen({ host, port: 0 })
+        return
+      }
+      logger.error('server listen error: ', err)
+    })
     server.listen({
       host,
-      port
+      port: desiredPort
     }, function () {
+      port = server.address().port
       logger.info('server run: ', port)
       function refreshPage ({ bufnr, data }) {
         logger.info('refresh page: ', bufnr)
