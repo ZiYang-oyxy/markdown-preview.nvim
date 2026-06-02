@@ -76,6 +76,10 @@ yarn browse -- .
 
 目录浏览模式会显示本地文件树，并用同一套预览运行时打开 Markdown 文件。非 Markdown 文件会回退到文本预览或下载模式。
 
+### 粘贴并渲染 Markdown
+
+点击 browse 侧栏标题栏里的铅笔按钮（或直接打开 `/_mkdp/scratch`），即可在左侧编辑器粘贴或输入 Markdown，右侧实时渲染。它复用完整的预览管线（mermaid、KaTeX、语法高亮），并支持顶栏的主题切换与独立 HTML 导出 —— 适合快速渲染片段而无需保存文件。
+
 ### 用 Playwright 校验预览页
 
 ```bash
