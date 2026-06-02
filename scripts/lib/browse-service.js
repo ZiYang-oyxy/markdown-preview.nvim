@@ -278,6 +278,74 @@ async function listBrowseDirectory(rootDir, requestPath = '.') {
   }
 }
 
+const FUZZY_SEPARATORS = new Set(['/', '\\', '-', '_', '.', ' '])
+
+// fzf-style subsequence fuzzy match with scoring.
+// Returns null when `query` is not a subsequence of `target`.
+// On match returns { score, positions } where positions are indices into `target`.
+// Smart-case: an all-lowercase query matches case-insensitively; a query containing
+// any uppercase letter matches case-sensitively.
+function fuzzyMatch(query, target) {
+  const q = String(query == null ? '' : query)
+  const t = String(target == null ? '' : target)
+
+  if (q.length === 0) {
+    return { score: 0, positions: [] }
+  }
+
+  const caseSensitive = /[A-Z]/.test(q)
+  const haystack = caseSensitive ? t : t.toLowerCase()
+  const needle = caseSensitive ? q : q.toLowerCase()
+
+  const positions = []
+  let score = 0
+  let prevMatchIndex = -1
+  let searchFrom = 0
+
+  for (let qi = 0; qi < needle.length; qi += 1) {
+    const ch = needle[qi]
+    const foundAt = haystack.indexOf(ch, searchFrom)
+    if (foundAt === -1) {
+      return null
+    }
+
+    // base score for a matched character
+    score += 1
+
+    // consecutive bonus: this match immediately follows the previous match
+    if (prevMatchIndex !== -1 && foundAt === prevMatchIndex + 1) {
+      score += 5
+    }
+
+    // boundary bonus: start of target, after a separator, or camelCase boundary
+    const isStart = foundAt === 0
+    const prevChar = foundAt > 0 ? t[foundAt - 1] : ''
+    const afterSeparator = FUZZY_SEPARATORS.has(prevChar)
+    const camelBoundary =
+      foundAt > 0 &&
+      prevChar === prevChar.toLowerCase() &&
+      prevChar !== prevChar.toUpperCase() &&
+      t[foundAt] === t[foundAt].toUpperCase() &&
+      t[foundAt] !== t[foundAt].toLowerCase()
+    if (isStart || afterSeparator || camelBoundary) {
+      score += 8
+    }
+
+    // gap penalty: characters skipped since the previous match (or since start
+    // for the first matched character). Keeps tight matches ahead of loose ones.
+    const gap = prevMatchIndex === -1 ? foundAt : foundAt - prevMatchIndex - 1
+    if (gap > 0) {
+      score -= Math.min(gap, 6)
+    }
+
+    positions.push(foundAt)
+    prevMatchIndex = foundAt
+    searchFrom = foundAt + 1
+  }
+
+  return { score, positions }
+}
+
 async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
   const resolved = resolveBrowseTarget(rootDir, requestPath)
   const stat = await fs.promises.stat(resolved.realPath)
@@ -424,6 +492,7 @@ module.exports = {
   DEFAULT_IGNORED_DIR_BASENAMES,
   DEFAULT_IGNORED_RELATIVE_DIRS,
   createBrowseError,
+  fuzzyMatch,
   isDisplayableFile,
   isIgnoredBrowseDirectory,
   isMarkdownPath,

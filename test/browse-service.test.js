@@ -7,7 +7,8 @@ const {
   listBrowseDirectory,
   searchBrowseFiles,
   readBrowseFile,
-  resolveBrowseTarget
+  resolveBrowseTarget,
+  fuzzyMatch
 } = require('../scripts/lib/browse-service')
 
 async function withTempTree(run) {
@@ -55,6 +56,41 @@ async function withTempTree(run) {
 }
 
 async function main() {
+  // ---- fuzzyMatch unit tests ----
+  function assertFuzzy(query, target, expectMatch) {
+    const result = fuzzyMatch(query, target)
+    if (expectMatch) {
+      assert.ok(result, `expected '${query}' to match '${target}'`)
+    } else {
+      assert.strictEqual(result, null, `expected '${query}' NOT to match '${target}'`)
+    }
+    return result
+  }
+
+  // subsequence match + positions
+  const bdBuild = assertFuzzy('bd', 'build', true)
+  assert.deepStrictEqual(bdBuild.positions, [0, 4], 'bd should match b(0) and d(4) in build')
+  assertFuzzy('abc', 'build', false)
+
+  // smart-case: lowercase query is case-insensitive, query with uppercase is case-sensitive
+  assertFuzzy('bd', 'Build', true)
+  assertFuzzy('Bd', 'build', false)
+
+  // consecutive run scores higher than scattered
+  assert.ok(
+    fuzzyMatch('bui', 'build').score > fuzzyMatch('bld', 'build').score,
+    'consecutive matches should score higher than scattered ones'
+  )
+
+  // separator-boundary match scores higher than mid-word match
+  assert.ok(
+    fuzzyMatch('f', 'app/foo').score > fuzzyMatch('f', 'affoo').score,
+    'match right after a separator should score higher than a mid-word match'
+  )
+
+  // empty query returns zero-score empty-position match
+  assert.deepStrictEqual(fuzzyMatch('', 'build'), { score: 0, positions: [] })
+
   await withTempTree(async ({ root, symlinkSupport }) => {
     const listing = await listBrowseDirectory(root, '.')
     const listingNames = listing.entries.map((entry) => entry.name)
