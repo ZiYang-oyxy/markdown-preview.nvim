@@ -69,6 +69,7 @@ function svgIcons() {
     colorTheme: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 1.5A5.5 5.5 0 007 12.5V1.5z" fill="currentColor"/></svg>',
     mermaidChart: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="7" width="3" height="5.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="5.5" y="4" width="3" height="8.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="10" y="1.5" width="3" height="11" rx="0.5" stroke="currentColor" stroke-width="1.2"/></svg>',
     exportHtml: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 1.5h5l3.5 3.5v7.5a1 1 0 01-1 1H3a1 1 0 01-1-1v-11a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5V5h3.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.5l2 2 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    scratch: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 1.5l3 3-7 7H2.5v-3l7-7z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 3l3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
   };
 }
 
@@ -170,6 +171,8 @@ function buildBrowseShellHtml() {
       flex-shrink: 0;
     }
     .sidebar-topbar .collapse-btn:hover { background: var(--accent-soft); color: var(--text); }
+    .sidebar-topbar .scratch-link { text-decoration: none; }
+    .sidebar.is-collapsed .sidebar-topbar .scratch-link { display: none; }
 
     .sidebar-search {
       padding: 0 14px 8px;
@@ -612,6 +615,7 @@ function buildBrowseShellHtml() {
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-topbar">
         <span class="title" id="sidebar-title" title="Files">Files</span>
+        <a class="collapse-btn scratch-link" id="scratch-link" href="/_mkdp/scratch" target="_blank" rel="noopener" title="Paste & render Markdown">${esc(icons.scratch)}</a>
         <button class="collapse-btn" id="collapse-btn" type="button" title="Collapse sidebar">${esc(icons.chevronLeft)}</button>
       </div>
       <div class="sidebar-search">
