@@ -67,10 +67,7 @@ body.mkdp-preview-open {
 
 main {
   color: var(--foreground-color);
-  background:
-    radial-gradient(circle at top left, rgba(56, 139, 253, 0.06), transparent 46%),
-    radial-gradient(circle at top right, rgba(22, 163, 74, 0.04), transparent 50%),
-    var(--secondary-background-color);
+  background: var(--color-bg-primary);
   font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", sans-serif;
   padding: 14px 16px 30px;
   box-sizing: border-box;
@@ -81,7 +78,7 @@ main {
   max-width: 1280px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
   gap: 20px;
   align-items: start;
 }
@@ -92,6 +89,7 @@ main {
 
 #content-col {
   min-width: 0;
+  order: 1;
 }
 
 #page-ctn {
@@ -106,14 +104,12 @@ main {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: var(--surface-strong);
-  border: 1px solid var(--border-color);
-  border-bottom: 0;
-  border-top-left-radius: 14px;
-  border-top-right-radius: 14px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
   line-height: 24px;
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(8px) saturate(120%);
+  box-shadow: none;
 }
 
 #page-header svg {
@@ -217,17 +213,17 @@ main {
 }
 
 #page-ctn .markdown-body {
-  border-color: var(--border-color);
-  box-shadow: var(--shadow-soft);
+  border: 0;
+  box-shadow: none;
 }
 
 #page-ctn.with-header .markdown-body {
   border-top: 0;
-  border-radius: 0 0 14px 14px;
+  border-radius: 0;
 }
 
 #page-ctn.header-hidden .markdown-body {
-  border-radius: 14px;
+  border-radius: 0;
 }
 
 #page-ctn .markdown-body h1,
@@ -375,11 +371,12 @@ main {
   align-self: start;
   max-height: calc(100vh - 28px);
   overflow: hidden;
-  border: 1px solid var(--border-color-soft);
-  border-radius: 16px;
-  background: var(--surface-strong);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(8px) saturate(120%);
+  border: 0;
+  border-left: 1px solid var(--border-color-soft);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  order: 2;
   z-index: 20;
 }
 
@@ -540,7 +537,7 @@ main {
 
 @media (max-width: 1120px) {
   #page-shell {
-    grid-template-columns: minmax(240px, 290px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 290px);
     gap: 16px;
   }
 }
@@ -567,8 +564,6 @@ main {
   #page-header {
     flex-wrap: wrap;
     align-items: flex-start;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
   }
 
   #page-header h3 {
@@ -576,11 +571,11 @@ main {
   }
 
   #page-ctn.header-hidden .markdown-body {
-    border-radius: 12px;
+    border-radius: 0;
   }
 
   #page-ctn.with-header .markdown-body {
-    border-radius: 0 0 12px 12px;
+    border-radius: 0;
   }
 
   #toc-mobile-open-btn {
@@ -710,15 +705,15 @@ main {
   display: none !important;
 }
 
-/* In browse mode, markdown-body always gets full border-radius since no header is above it */
+/* In browse mode, markdown-body stays flat with no card framing */
 .mkdp-browse-mode #page-ctn .markdown-body {
-  border-radius: 14px;
+  border-radius: 0;
 }
 
-/* Remove outer padding and background gradient in browse mode for seamless iframe fit */
+/* Match outer background to the document so it reads as one flat surface */
 .mkdp-browse-mode main {
-  padding: 8px 12px 12px;
-  background: var(--secondary-background-color);
+  padding: 0;
+  background: var(--color-bg-primary);
 }
 
 /* Force single-column layout in browse mode (no built-in TOC column) */
