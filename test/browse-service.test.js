@@ -141,15 +141,46 @@ async function main() {
 
     const recursiveSearch = await searchBrowseFiles(root, '.', 'ph')
     assert.strictEqual(recursiveSearch.relativePath, '.')
-    assert.deepStrictEqual(recursiveSearch.entries, [
-      {
-        name: 'alpha-phase.md',
-        relativePath: 'notes/deep/alpha-phase.md',
-        kind: 'file',
-        isMarkdown: true,
-        isSymlink: false
-      }
-    ])
+    // 'ph' is a subsequence of notes/deep/alpha-phase.md (phase.bin is filtered as
+    // binary). Only alpha-phase.md should remain.
+    const phPaths = recursiveSearch.entries.map((e) => e.relativePath)
+    assert.deepStrictEqual(phPaths, ['notes/deep/alpha-phase.md'])
+    const phEntry = recursiveSearch.entries[0]
+    assert.strictEqual(phEntry.name, 'alpha-phase.md')
+    assert.strictEqual(phEntry.kind, 'file')
+    assert.strictEqual(phEntry.isMarkdown, true)
+    assert.strictEqual(phEntry.isSymlink, false)
+    assert.strictEqual(typeof phEntry.score, 'number')
+    assert.ok(Array.isArray(phEntry.matchPositions), 'entry should carry matchPositions')
+    // positions index into relativePath
+    phEntry.matchPositions.forEach((pos) => {
+      assert.ok(pos >= 0 && pos < phEntry.relativePath.length, 'position within relativePath')
+    })
+
+    // fzf subsequence across path segments: 'nda' hits notes/deep/alpha-phase.md
+    const crossSegment = await searchBrowseFiles(root, '.', 'nda')
+    const crossPaths = crossSegment.entries.map((e) => e.relativePath)
+    assert.ok(
+      crossPaths.includes('notes/deep/alpha-phase.md'),
+      'query spanning path segments should match the full relative path'
+    )
+
+    // results sorted by score descending: a 'gd' query should surface docs/guide.md first
+    const guideSearch = await searchBrowseFiles(root, '.', 'gd')
+    assert.ok(
+      guideSearch.entries.length >= 1 && guideSearch.entries[0].relativePath === 'docs/guide.md',
+      "'gd' should match docs/guide.md as top result"
+    )
+    for (let i = 1; i < guideSearch.entries.length; i += 1) {
+      assert.ok(
+        guideSearch.entries[i - 1].score >= guideSearch.entries[i].score,
+        'entries must be sorted by score descending'
+      )
+    }
+
+    // empty query returns no entries
+    const emptySearch = await searchBrowseFiles(root, '.', '')
+    assert.deepStrictEqual(emptySearch.entries, [])
 
     assert.throws(
       () => resolveBrowseTarget(root, '../outside.txt'),
