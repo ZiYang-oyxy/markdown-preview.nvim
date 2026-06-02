@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "web": {
+    "htmlRoot": "web",
+    "staticRoot": "static",
+    "indexHtml": "web/index.html",
+    "notFoundHtml": "web/404.html"
+  }
+}
