@@ -81,3 +81,6 @@ test/artifacts/
 
 # Brainstorming visual companion
 .superpowers/
+
+# Playwright MCP artifacts
+.playwright-mcp/
