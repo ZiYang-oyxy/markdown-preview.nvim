@@ -1,0 +1,33 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-02-browse-fzf-search.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: 后端 fuzzyMatch 纯函数",
+      "status": "pending",
+      "description": "**Goal:** 新增 fuzzyMatch(query, target) 纯函数：子序列匹配 + 评分 + 命中位置 + smart-case，导出供测试。\n\n**Files:** scripts/lib/browse-service.js, test/browse-service.test.js\n\n**Verify:** node test/browse-service.test.js → browse-service tests: ok\n\n```json:metadata\n{\"files\": [\"scripts/lib/browse-service.js\", \"test/browse-service.test.js\"], \"verifyCommand\": \"node test/browse-service.test.js\", \"acceptanceCriteria\": [\"fuzzyMatch bd->build positions [0,4]\", \"abc no match\", \"smart-case\", \"consecutive scores higher\", \"separator bonus\", \"empty query zero match\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 2: searchBrowseFiles 接入模糊匹配",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** searchBrowseFiles 改用 fuzzyMatch 对完整相对路径匹配，命中 entry 附带 score 与 matchPositions，按 score 降序排序；更新现有断言。\n\n**Files:** scripts/lib/browse-service.js:281-368, test/browse-service.test.js:106-116\n\n**Verify:** node test/browse-service.test.js → browse-service tests: ok\n\n```json:metadata\n{\"files\": [\"scripts/lib/browse-service.js\", \"test/browse-service.test.js\"], \"verifyCommand\": \"node test/browse-service.test.js\", \"acceptanceCriteria\": [\"match full relative path with score+matchPositions\", \"sort by score desc then path asc\", \"empty query empty\", \"ignore rules unchanged\", \"matchPositions index into relativePath\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 3: 前端防抖 + spinner + 命中高亮",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** 搜索框 input 加 180ms 防抖；搜索框内旋转 spinner；结果按 matchPositions 高亮命中字符。\n\n**Files:** scripts/lib/standalone-preview-server.js, test/browse-fixed-toc-sidebar.test.js\n\n**Verify:** node test/browse-fixed-toc-sidebar.test.js → ok\n\n```json:metadata\n{\"files\": [\"scripts/lib/standalone-preview-server.js\", \"test/browse-fixed-toc-sidebar.test.js\"], \"verifyCommand\": \"node test/browse-fixed-toc-sidebar.test.js\", \"acceptanceCriteria\": [\"spinner element+css+keyframes\", \"180ms debounce\", \"is-active toggle\", \"highlightByPositions + match-hl\", \".match-hl css\", \"existing assertions pass\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 4: 本机端到端验收",
+      "status": "pending",
+      "blockedBy": [2],
+      "description": "**Goal:** 用 Playwright 启动真实服务器，在临时树上验证 fzf 模糊命中、防抖期间 spinner 出现、命中高亮。\n\n**Files:** test/browse-fzf-search.e2e.test.js\n\n**Verify:** node test/browse-fzf-search.e2e.test.js → browse-fzf-search e2e tests: ok\n\n```json:metadata\n{\"files\": [\"test/browse-fzf-search.e2e.test.js\"], \"verifyCommand\": \"node test/browse-fzf-search.e2e.test.js\", \"acceptanceCriteria\": [\"real server bd surfaces foo.md\", \"spinner appears then hides\", \"match-hl present\", \"cleanup\", \"ok exit 0\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-06-02"
+}
