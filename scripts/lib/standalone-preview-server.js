@@ -69,6 +69,7 @@ function svgIcons() {
     colorTheme: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 1.5A5.5 5.5 0 007 12.5V1.5z" fill="currentColor"/></svg>',
     mermaidChart: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="7" width="3" height="5.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="5.5" y="4" width="3" height="8.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="10" y="1.5" width="3" height="11" rx="0.5" stroke="currentColor" stroke-width="1.2"/></svg>',
     exportHtml: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 1.5h5l3.5 3.5v7.5a1 1 0 01-1 1H3a1 1 0 01-1-1v-11a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5V5h3.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.5l2 2 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    scratch: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 1.5l3 3-7 7H2.5v-3l7-7z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 3l3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
   };
 }
 
@@ -170,6 +171,8 @@ function buildBrowseShellHtml() {
       flex-shrink: 0;
     }
     .sidebar-topbar .collapse-btn:hover { background: var(--accent-soft); color: var(--text); }
+    .sidebar-topbar .scratch-link { text-decoration: none; }
+    .sidebar.is-collapsed .sidebar-topbar .scratch-link { display: none; }
 
     .sidebar-search {
       padding: 0 14px 8px;
@@ -612,6 +615,7 @@ function buildBrowseShellHtml() {
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-topbar">
         <span class="title" id="sidebar-title" title="Files">Files</span>
+        <a class="collapse-btn scratch-link" id="scratch-link" href="/_mkdp/scratch" title="Paste & render Markdown">${esc(icons.scratch)}</a>
         <button class="collapse-btn" id="collapse-btn" type="button" title="Collapse sidebar">${esc(icons.chevronLeft)}</button>
       </div>
       <div class="sidebar-search">
@@ -1357,6 +1361,120 @@ function buildBrowseShellHtml() {
 </html>`;
 }
 
+function buildScratchShellHtml() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Markdown Scratch</title>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #f6f7f9; --border: #e2e5ea;
+    --text: #1f2328; --muted: #6b7280; --accent: #2f6feb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--text); background: var(--bg); }
+  .scratch-shell { display: flex; flex-direction: column; height: 100vh; }
+  .scratch-topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--panel);
+    flex-shrink: 0; min-height: 46px;
+  }
+  .scratch-topbar .title { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .scratch-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: transparent; color: var(--muted);
+    cursor: pointer; text-decoration: none;
+  }
+  .scratch-btn:hover { color: var(--text); border-color: var(--accent); }
+  .scratch-body { display: flex; flex: 1; min-height: 0; }
+  .scratch-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .scratch-pane.input { width: 42%; border-right: 1px solid var(--border); }
+  .scratch-pane.preview { flex: 1; }
+  #scratch-input {
+    flex: 1; width: 100%; border: 0; resize: none; outline: none;
+    padding: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px; line-height: 1.6; color: var(--text); background: var(--bg);
+  }
+  .scratch-divider { width: 5px; cursor: col-resize; background: var(--border); flex-shrink: 0; }
+  .scratch-divider:hover { background: var(--accent); }
+  #preview-frame { flex: 1; width: 100%; border: 0; }
+</style>
+</head>
+<body>
+<div class="scratch-shell">
+  <div class="scratch-topbar">
+    <a class="scratch-btn" id="browse-link" href="/_mkdp/browse" title="Back to file browser"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 5a2 2 0 012-2h3.172a2 2 0 011.414.586l1.828 1.828A2 2 0 0011.828 6H16a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V5z" stroke="currentColor" stroke-width="1.4"/></svg></a>
+    <span class="title">Markdown Scratch</span>
+  </div>
+  <div class="scratch-body" id="scratch-body">
+    <div class="scratch-pane input" id="input-pane">
+      <textarea id="scratch-input" placeholder="Paste or type Markdown here..." spellcheck="false" autocomplete="off"></textarea>
+    </div>
+    <div class="scratch-divider" id="scratch-divider"></div>
+    <div class="scratch-pane preview">
+      <iframe id="preview-frame" title="Markdown preview" src="/page/1"></iframe>
+    </div>
+  </div>
+</div>
+<script>
+  (function () {
+    var input = document.getElementById('scratch-input');
+    var frame = document.getElementById('preview-frame');
+    var divider = document.getElementById('scratch-divider');
+    var inputPane = document.getElementById('input-pane');
+    var body = document.getElementById('scratch-body');
+
+    var frameReady = false;
+    var pendingContent = null;
+    var debounceTimer = null;
+
+    function currentLines() {
+      return input.value.split(/\\r?\\n/);
+    }
+
+    function pushContent() {
+      var lines = currentLines();
+      if (!frameReady) {
+        pendingContent = lines;
+        return;
+      }
+      frame.contentWindow.postMessage({ type: 'mkdp:set-content', content: lines }, '*');
+    }
+
+    input.addEventListener('input', function () {
+      if (debounceTimer) { clearTimeout(debounceTimer); }
+      debounceTimer = setTimeout(pushContent, 200);
+    });
+
+    frame.addEventListener('load', function () {
+      frameReady = true;
+      var lines = pendingContent || currentLines();
+      pendingContent = null;
+      frame.contentWindow.postMessage({ type: 'mkdp:set-content', content: lines }, '*');
+    });
+
+    var dragging = false;
+    divider.addEventListener('mousedown', function () { dragging = true; document.body.style.userSelect = 'none'; });
+    window.addEventListener('mouseup', function () { dragging = false; document.body.style.userSelect = ''; });
+    window.addEventListener('mousemove', function (e) {
+      if (!dragging) { return; }
+      var rect = body.getBoundingClientRect();
+      var ratio = (e.clientX - rect.left) / rect.width;
+      if (ratio < 0.15) { ratio = 0.15; }
+      if (ratio > 0.85) { ratio = 0.85; }
+      inputPane.style.width = (ratio * 100) + '%';
+    });
+  })();
+</script>
+</body>
+</html>`;
+}
+
 function resolveImagePath(assetPath, context) {
   const decoded = decodeURIComponent(
     decodeURIComponent(assetPath.replace(/^\/_local_image_/, ""))
@@ -1640,6 +1758,13 @@ async function handleRequest(req, res, context) {
     return;
   }
 
+  if (pathname === "/_mkdp/scratch" || pathname === "/_mkdp/scratch/") {
+    res.statusCode = 200;
+    res.setHeader("content-type", "text/html; charset=utf-8");
+    res.end(buildScratchShellHtml());
+    return;
+  }
+
   if (/^\/page\/\d+$/.test(pathname)) {
     sendFile(res, assetLayout.indexHtml);
     return;
@@ -1790,4 +1915,5 @@ async function startStandalonePreviewServer(context) {
 module.exports = {
   startStandalonePreviewServer,
   buildBrowseShellHtml,
+  buildScratchShellHtml,
 };

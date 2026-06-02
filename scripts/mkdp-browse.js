@@ -140,6 +140,7 @@ async function main() {
       process.stderr.write(`open the URL manually: ${url}\n`);
     }
 
+    process.stderr.write(`scratch (paste & render): ${session.origin}/_mkdp/scratch\n`);
     process.stderr.write("browse server is running, press Ctrl+C to stop\n");
     await waitForShutdown();
   } finally {
