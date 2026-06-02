@@ -78,6 +78,10 @@ yarn browse -- .
 
 Browse mode gives you a local file tree and opens Markdown files in the same preview runtime. Non-Markdown files fall back to text preview or download mode.
 
+### Paste and render Markdown
+
+Open `/_mkdp/scratch` on a running browse server to paste or type Markdown into a left-hand editor and see it rendered live on the right. It reuses the full preview pipeline (mermaid, KaTeX, syntax highlighting) and supports theme switching and standalone HTML export from the top bar — handy for quickly rendering snippets without saving a file.
+
 ### Validate the preview with Playwright
 
 ```bash
