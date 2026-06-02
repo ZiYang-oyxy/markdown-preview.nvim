@@ -4,40 +4,40 @@
     {
       "id": 10,
       "subject": "Task 1: 预览页新增 mkdp:set-content 分支",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** 让预览页(iframe)能接收父页面通过 postMessage 推来的任意 markdown 文本并用既有渲染入口渲染。\n\n**Files:**\n- Modify: app/pages/index.jsx (handleParentMessage, 约 469-500 行; 插入到 mkdp:export 分支之后)\n\n**Acceptance Criteria:**\n- handleParentMessage 收到 {type:'mkdp:set-content', content} 时调用 onRefreshContent 渲染\n- content 同时支持字符串(自动按行切分)和字符串数组\n- payload 含 cursor(数组)/name/options/isActive 等必需字段, 不抛错\n- 既有分支行为不变\n\n**Verify:** 由 Task 4 构建 + Task 5 Playwright 测试覆盖; 本任务先人工核对分支插入位置。\n\n```json:metadata\n{\"files\": [\"app/pages/index.jsx\"], \"verifyCommand\": \"\", \"acceptanceCriteria\": [\"handleParentMessage 处理 mkdp:set-content 调用 onRefreshContent\", \"content 支持字符串与数组\", \"payload 含 cursor/name/options/isActive 不抛错\", \"既有分支行为不变\"]}\n```"
     },
     {
       "id": 11,
       "subject": "Task 2: 新增 buildScratchShellHtml 与 /_mkdp/scratch 路由",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** 服务器新增独立路由, 返回左 textarea / 右预览 iframe 的双栏粘贴页, 顶栏复用主题切换与导出, textarea 输入防抖后 postMessage 推送内容给 iframe。\n\n**Files:**\n- Modify: scripts/lib/standalone-preview-server.js\n\n**Acceptance Criteria:**\n- GET /_mkdp/scratch (含尾斜杠) 返回 200 text/html, 无视 browseRoot\n- HTML 含 id=scratch-input 与 id=preview-frame (src=/page/1)\n- input 防抖 200ms postMessage set-content\n- iframe load 前缓存 load 后补推首帧\n- 顶栏按钮推 set-theme/export\n- module.exports 导出 buildScratchShellHtml\n\n**Verify:** node -e \"const s=require('./scripts/lib/standalone-preview-server'); const h=s.buildScratchShellHtml(); if(!/id=\\\"scratch-input\\\"/.test(h)||!/id=\\\"preview-frame\\\"/.test(h)||!/mkdp:set-content/.test(h)) {throw new Error('missing markers')}; console.log('ok')\" -> ok\n\n```json:metadata\n{\"files\": [\"scripts/lib/standalone-preview-server.js\"], \"verifyCommand\": \"node -e \\\"const s=require('./scripts/lib/standalone-preview-server'); const h=s.buildScratchShellHtml(); if(!/id=\\\\\\\"scratch-input\\\\\\\"/.test(h)) {throw new Error('missing')}; console.log('ok')\\\"\", \"acceptanceCriteria\": [\"GET /_mkdp/scratch 返回 200 text/html 无视 browseRoot\", \"HTML 含 scratch-input 与 preview-frame(src=/page/1)\", \"input 防抖 200ms postMessage set-content\", \"iframe load 前缓存 load 后补推\", \"顶栏按钮推 set-theme/export\", \"导出 buildScratchShellHtml\"]}\n```"
     },
     {
       "id": 12,
       "subject": "Task 3: 路由单元测试",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [11],
       "description": "**Goal:** 用单元测试锁定 /_mkdp/scratch 路由: 返回 200、含必需 DOM 标记、不依赖 browseRoot。\n\n**Files:**\n- Create: test/scratch-route.test.js\n\n**Acceptance Criteria:**\n- 断言 /_mkdp/scratch 返回 200 且 body 含 scratch-input/preview-frame/mkdp:set-content\n- 断言 browseRoot 未设置时仍返回 200\n\n**Verify:** node --test test/scratch-route.test.js -> 全部通过\n\n```json:metadata\n{\"files\": [\"test/scratch-route.test.js\"], \"verifyCommand\": \"node --test test/scratch-route.test.js\", \"acceptanceCriteria\": [\"/_mkdp/scratch 返回 200 含必需标记\", \"无 browseRoot 时仍返回 200\"]}\n```"
     },
     {
       "id": 13,
       "subject": "Task 4: 重新构建预览页产物并同步 dist",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [10, 11],
       "description": "**Goal:** 把 Task 1 对 app/pages/index.jsx 的改动构建进 Next.js 产物 (app/out/), 并由构建脚本同步到 dist/ 并 git add。\n\n**Files:**\n- 产物: app/out/、dist/web/、dist/static/、dist/asset-manifest.json\n\n**Acceptance Criteria:**\n- yarn build-app 成功完成无报错\n- 产物包含 mkdp:set-content\n- dist 改动已被 git add\n\n**Verify:** yarn build-app && grep -rl \"mkdp:set-content\" app/out dist/web -> 至少列出一个文件\n\n```json:metadata\n{\"files\": [\"app/out\", \"dist/web\", \"dist/static\", \"dist/asset-manifest.json\"], \"verifyCommand\": \"yarn build-app && grep -rl \\\"mkdp:set-content\\\" app/out dist/web\", \"acceptanceCriteria\": [\"yarn build-app 成功\", \"产物包含 mkdp:set-content\", \"dist 改动已 git add\"]}\n```"
     },
     {
       "id": 14,
       "subject": "Task 5: 端到端渲染测试(Playwright)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [13],
       "description": "**Goal:** 验证完整链路 —— 打开 /_mkdp/scratch, 在 textarea 注入 markdown, 右侧 iframe 渲染出对应 HTML。\n\n**Files:**\n- Create: test/scratch-render.e2e.test.js\n\n**Acceptance Criteria:**\n- Playwright 打开 /_mkdp/scratch 并 fill #scratch-input\n- 防抖后断言 iframe 内出现 h1/ul li/pre\n- 正确关闭 server 与 browser\n\n**Verify:** node --test test/scratch-render.e2e.test.js -> 通过\n\n```json:metadata\n{\"files\": [\"test/scratch-render.e2e.test.js\"], \"verifyCommand\": \"node --test test/scratch-render.e2e.test.js\", \"acceptanceCriteria\": [\"Playwright 打开 scratch 填入 markdown\", \"iframe 内出现 h1/ul/pre\", \"正确关闭 server 与 browser\"]}\n```"
     },
     {
       "id": 15,
       "subject": "Task 6: (可选)CLI/文档入口",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [11],
       "description": "**Goal:** 让用户能方便发现并打开 scratch 页面 —— browse CLI 输出提示 scratch URL, README 增补说明。\n\n**Files:**\n- Modify: scripts/mkdp-browse.js、README.md、README_zh.md\n\n**Acceptance Criteria:**\n- mkdp-browse 启动时日志含 …/_mkdp/scratch 入口\n- README 增加简短说明\n\n**Verify:** node scripts/mkdp-browse.js --help 正常; 手动启动后日志含 scratch URL\n\n```json:metadata\n{\"files\": [\"scripts/mkdp-browse.js\", \"README.md\", \"README_zh.md\"], \"verifyCommand\": \"node scripts/mkdp-browse.js --help\", \"acceptanceCriteria\": [\"mkdp-browse 日志含 scratch URL\", \"README 增补 scratch 说明\"]}\n```"
     }
