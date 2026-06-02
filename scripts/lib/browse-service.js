@@ -353,7 +353,7 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
     throw createBrowseError(400, 'not_directory', 'browse search target must be a directory')
   }
 
-  const normalizedQuery = String(query || '').toLowerCase().trim()
+  const normalizedQuery = String(query || '').trim()
   if (!normalizedQuery) {
     return {
       rootPath: resolved.rootRealPath,
@@ -410,7 +410,8 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
         continue
       }
 
-      if (!entry.name.toLowerCase().includes(normalizedQuery)) {
+      const match = fuzzyMatch(normalizedQuery, entryRelativePath)
+      if (!match) {
         continue
       }
 
@@ -419,14 +420,21 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
         relativePath: entryRelativePath,
         kind: 'file',
         isMarkdown: isMarkdownPath(entryRealPath),
-        isSymlink
+        isSymlink,
+        score: match.score,
+        matchPositions: match.positions
       })
     }
   }
 
   await walk(resolved.realPath, resolved.relativePath)
 
-  entries.sort((left, right) => left.relativePath.localeCompare(right.relativePath))
+  entries.sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score
+    }
+    return left.relativePath.localeCompare(right.relativePath)
+  })
 
   return {
     rootPath: resolved.rootRealPath,
