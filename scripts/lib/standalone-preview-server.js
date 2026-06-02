@@ -615,7 +615,7 @@ function buildBrowseShellHtml() {
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-topbar">
         <span class="title" id="sidebar-title" title="Files">Files</span>
-        <a class="collapse-btn scratch-link" id="scratch-link" href="/_mkdp/scratch" target="_blank" rel="noopener" title="Paste & render Markdown">${esc(icons.scratch)}</a>
+        <a class="collapse-btn scratch-link" id="scratch-link" href="/_mkdp/scratch" title="Paste & render Markdown">${esc(icons.scratch)}</a>
         <button class="collapse-btn" id="collapse-btn" type="button" title="Collapse sidebar">${esc(icons.chevronLeft)}</button>
       </div>
       <div class="sidebar-search">
@@ -1378,17 +1378,19 @@ function buildScratchShellHtml() {
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--text); background: var(--bg); }
   .scratch-shell { display: flex; flex-direction: column; height: 100vh; }
   .scratch-topbar {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; gap: 10px;
     padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--panel);
-    flex-shrink: 0;
+    flex-shrink: 0; min-height: 46px;
   }
-  .scratch-topbar .title { font-size: 13px; font-weight: 600; color: var(--muted); }
-  .scratch-topbar .actions { display: flex; gap: 8px; }
+  .scratch-topbar .title { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--muted); }
   .scratch-btn {
-    border: 1px solid var(--border); background: var(--bg); color: var(--text);
-    padding: 5px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: transparent; color: var(--muted);
+    cursor: pointer; text-decoration: none;
   }
-  .scratch-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .scratch-btn:hover { color: var(--text); border-color: var(--accent); }
   .scratch-body { display: flex; flex: 1; min-height: 0; }
   .scratch-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   .scratch-pane.input { width: 42%; border-right: 1px solid var(--border); }
@@ -1406,11 +1408,8 @@ function buildScratchShellHtml() {
 <body>
 <div class="scratch-shell">
   <div class="scratch-topbar">
+    <a class="scratch-btn" id="browse-link" href="/_mkdp/browse" title="Back to file browser"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 5a2 2 0 012-2h3.172a2 2 0 011.414.586l1.828 1.828A2 2 0 0011.828 6H16a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V5z" stroke="currentColor" stroke-width="1.4"/></svg></a>
     <span class="title">Markdown Scratch</span>
-    <div class="actions">
-      <button class="scratch-btn" id="theme-btn" type="button" title="Toggle preview theme">Theme</button>
-      <button class="scratch-btn" id="export-btn" type="button" title="Export HTML">Export HTML</button>
-    </div>
   </div>
   <div class="scratch-body" id="scratch-body">
     <div class="scratch-pane input" id="input-pane">
@@ -1426,8 +1425,6 @@ function buildScratchShellHtml() {
   (function () {
     var input = document.getElementById('scratch-input');
     var frame = document.getElementById('preview-frame');
-    var themeBtn = document.getElementById('theme-btn');
-    var exportBtn = document.getElementById('export-btn');
     var divider = document.getElementById('scratch-divider');
     var inputPane = document.getElementById('input-pane');
     var body = document.getElementById('scratch-body');
@@ -1435,7 +1432,6 @@ function buildScratchShellHtml() {
     var frameReady = false;
     var pendingContent = null;
     var debounceTimer = null;
-    var themeMode = 'light';
 
     function currentLines() {
       return input.value.split(/\\r?\\n/);
@@ -1460,19 +1456,6 @@ function buildScratchShellHtml() {
       var lines = pendingContent || currentLines();
       pendingContent = null;
       frame.contentWindow.postMessage({ type: 'mkdp:set-content', content: lines }, '*');
-    });
-
-    themeBtn.addEventListener('click', function () {
-      themeMode = themeMode === 'light' ? 'dark' : 'light';
-      if (frameReady) {
-        frame.contentWindow.postMessage({ type: 'mkdp:set-theme', theme: themeMode }, '*');
-      }
-    });
-
-    exportBtn.addEventListener('click', function () {
-      if (frameReady) {
-        frame.contentWindow.postMessage({ type: 'mkdp:export' }, '*');
-      }
     });
 
     var dragging = false;
