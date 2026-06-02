@@ -111,11 +111,36 @@ function testTocToggleKeepsDrawerOnNarrowScreens() {
   )
 }
 
+function testFzfSearchUi() {
+  const html = buildBrowseShellHtml()
+  const script = extractScript(html)
+
+  // spinner element + styles
+  assert.ok(html.includes('id="search-spinner"'), 'shell should include a search spinner element')
+  assert.ok(html.includes('.search-spinner'), 'shell should include search-spinner styles')
+  assert.ok(html.includes('@keyframes mkdp-spin'), 'shell should define the spinner keyframes')
+
+  // 180ms debounce
+  assert.ok(script.includes('searchDebounceTimer'), 'search should use a debounce timer')
+  assert.ok(/setTimeout\([^;]*180\)/.test(script) || script.includes(', 180)'), 'debounce delay should be 180ms')
+
+  // spinner toggle
+  assert.ok(
+    script.includes("'is-active'") || script.includes('"is-active"'),
+    'spinner should toggle is-active class'
+  )
+
+  // hit highlighting
+  assert.ok(script.includes('highlightByPositions'), 'render should highlight matched positions')
+  assert.ok(html.includes('.match-hl'), 'shell should include match highlight styles')
+}
+
 function main() {
   testTocSidebarIsWorkspaceColumn()
   testFloatingTocIsRemovedFromWideLayout()
   testCollapsedStateTargetsSidebar()
   testTocToggleKeepsDrawerOnNarrowScreens()
+  testFzfSearchUi()
   process.stdout.write('browse fixed toc sidebar tests: ok\n')
 }
 
