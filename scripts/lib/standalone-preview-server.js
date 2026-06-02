@@ -1357,6 +1357,137 @@ function buildBrowseShellHtml() {
 </html>`;
 }
 
+function buildScratchShellHtml() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Markdown Scratch</title>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #f6f7f9; --border: #e2e5ea;
+    --text: #1f2328; --muted: #6b7280; --accent: #2f6feb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--text); background: var(--bg); }
+  .scratch-shell { display: flex; flex-direction: column; height: 100vh; }
+  .scratch-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--panel);
+    flex-shrink: 0;
+  }
+  .scratch-topbar .title { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .scratch-topbar .actions { display: flex; gap: 8px; }
+  .scratch-btn {
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    padding: 5px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  .scratch-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .scratch-body { display: flex; flex: 1; min-height: 0; }
+  .scratch-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .scratch-pane.input { width: 42%; border-right: 1px solid var(--border); }
+  .scratch-pane.preview { flex: 1; }
+  #scratch-input {
+    flex: 1; width: 100%; border: 0; resize: none; outline: none;
+    padding: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px; line-height: 1.6; color: var(--text); background: var(--bg);
+  }
+  .scratch-divider { width: 5px; cursor: col-resize; background: var(--border); flex-shrink: 0; }
+  .scratch-divider:hover { background: var(--accent); }
+  #preview-frame { flex: 1; width: 100%; border: 0; }
+</style>
+</head>
+<body>
+<div class="scratch-shell">
+  <div class="scratch-topbar">
+    <span class="title">Markdown Scratch</span>
+    <div class="actions">
+      <button class="scratch-btn" id="theme-btn" type="button" title="Toggle preview theme">Theme</button>
+      <button class="scratch-btn" id="export-btn" type="button" title="Export HTML">Export HTML</button>
+    </div>
+  </div>
+  <div class="scratch-body" id="scratch-body">
+    <div class="scratch-pane input" id="input-pane">
+      <textarea id="scratch-input" placeholder="Paste or type Markdown here..." spellcheck="false" autocomplete="off"></textarea>
+    </div>
+    <div class="scratch-divider" id="scratch-divider"></div>
+    <div class="scratch-pane preview">
+      <iframe id="preview-frame" title="Markdown preview" src="/page/1"></iframe>
+    </div>
+  </div>
+</div>
+<script>
+  (function () {
+    var input = document.getElementById('scratch-input');
+    var frame = document.getElementById('preview-frame');
+    var themeBtn = document.getElementById('theme-btn');
+    var exportBtn = document.getElementById('export-btn');
+    var divider = document.getElementById('scratch-divider');
+    var inputPane = document.getElementById('input-pane');
+    var body = document.getElementById('scratch-body');
+
+    var frameReady = false;
+    var pendingContent = null;
+    var debounceTimer = null;
+    var themeMode = 'light';
+
+    function currentLines() {
+      return input.value.split(/\\r?\\n/);
+    }
+
+    function pushContent() {
+      var lines = currentLines();
+      if (!frameReady) {
+        pendingContent = lines;
+        return;
+      }
+      frame.contentWindow.postMessage({ type: 'mkdp:set-content', content: lines }, '*');
+    }
+
+    input.addEventListener('input', function () {
+      if (debounceTimer) { clearTimeout(debounceTimer); }
+      debounceTimer = setTimeout(pushContent, 200);
+    });
+
+    frame.addEventListener('load', function () {
+      frameReady = true;
+      var lines = pendingContent || currentLines();
+      pendingContent = null;
+      frame.contentWindow.postMessage({ type: 'mkdp:set-content', content: lines }, '*');
+    });
+
+    themeBtn.addEventListener('click', function () {
+      themeMode = themeMode === 'light' ? 'dark' : 'light';
+      if (frameReady) {
+        frame.contentWindow.postMessage({ type: 'mkdp:set-theme', theme: themeMode }, '*');
+      }
+    });
+
+    exportBtn.addEventListener('click', function () {
+      if (frameReady) {
+        frame.contentWindow.postMessage({ type: 'mkdp:export' }, '*');
+      }
+    });
+
+    var dragging = false;
+    divider.addEventListener('mousedown', function () { dragging = true; document.body.style.userSelect = 'none'; });
+    window.addEventListener('mouseup', function () { dragging = false; document.body.style.userSelect = ''; });
+    window.addEventListener('mousemove', function (e) {
+      if (!dragging) { return; }
+      var rect = body.getBoundingClientRect();
+      var ratio = (e.clientX - rect.left) / rect.width;
+      if (ratio < 0.15) { ratio = 0.15; }
+      if (ratio > 0.85) { ratio = 0.85; }
+      inputPane.style.width = (ratio * 100) + '%';
+    });
+  })();
+</script>
+</body>
+</html>`;
+}
+
 function resolveImagePath(assetPath, context) {
   const decoded = decodeURIComponent(
     decodeURIComponent(assetPath.replace(/^\/_local_image_/, ""))
@@ -1640,6 +1771,13 @@ async function handleRequest(req, res, context) {
     return;
   }
 
+  if (pathname === "/_mkdp/scratch" || pathname === "/_mkdp/scratch/") {
+    res.statusCode = 200;
+    res.setHeader("content-type", "text/html; charset=utf-8");
+    res.end(buildScratchShellHtml());
+    return;
+  }
+
   if (/^\/page\/\d+$/.test(pathname)) {
     sendFile(res, assetLayout.indexHtml);
     return;
@@ -1790,4 +1928,5 @@ async function startStandalonePreviewServer(context) {
 module.exports = {
   startStandalonePreviewServer,
   buildBrowseShellHtml,
+  buildScratchShellHtml,
 };
