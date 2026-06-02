@@ -498,6 +498,24 @@ export default class PreviewPage extends React.Component {
       }
       return
     }
+    if (event.data.type === 'mkdp:set-content') {
+      const raw = event.data.content
+      const content = Array.isArray(raw)
+        ? raw
+        : String(raw == null ? '' : raw).split(/\r?\n/)
+      this.onRefreshContent({
+        options: this.currentRefreshOptions || {},
+        isActive: true,
+        winline: 1,
+        winheight: 1,
+        cursor: [0, 1, 1, 0],
+        pageTitle: '',
+        theme: this.state.theme || 'light',
+        name: 'scratch',
+        content
+      })
+      return
+    }
   }
 
   setupHeadingObserver() {
@@ -730,6 +748,7 @@ export default class PreviewPage extends React.Component {
     name = '',
     content
   }) {
+    this.currentRefreshOptions = options
     this.currentMermaidOptions = options.maid || {}
 
     if (!this.state.mermaidThemePresetTouched) {
