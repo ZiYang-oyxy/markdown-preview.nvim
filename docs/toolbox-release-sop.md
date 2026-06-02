@@ -44,6 +44,9 @@ rm -rf "$TMP_PREFIX"
 - `id="content-topbar"`
 - `id="theme-btn"`
 - `id="export-btn"`
+- `id="scratch-link"`（scratch 粘贴页入口）
+- `id="toc-sidebar"`（固定右侧 TOC）
+- `class="search-spinner"`（fzf 搜索 spinner）
 
 这些标记用于防止只发布旧 browse shell 的版本。
 
@@ -53,7 +56,7 @@ rm -rf "$TMP_PREFIX"
 
 ```bash
 git tag -fa toolbox-v<version> -m "Release toolbox-v<version>"
-git push origin feature/markdown-preview-toolbox-cli
+git push origin master
 git push origin +toolbox-v<version>
 ```
 
@@ -77,4 +80,4 @@ gh release view toolbox-v<version> \
   --json tagName,name,targetCommitish,assets,url
 ```
 
-`targetCommitish` 应为 `feature/markdown-preview-toolbox-cli`，资产名必须和版本号一致。
+`targetCommitish` 应为 `master`，资产名必须和版本号一致。
