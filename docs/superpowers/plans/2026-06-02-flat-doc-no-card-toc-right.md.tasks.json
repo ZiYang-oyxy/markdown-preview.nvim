@@ -4,14 +4,14 @@
     {
       "id": 10,
       "subject": "Task 1: 文档与 TOC 去卡片悬浮（共享 CSS）",
-      "status": "pending",
+      "status": "completed",
       "description": "移除 .markdown-body / #toc-panel / #page-header 的边框/阴影/圆角/填充背景，改 app/_static/{markdown,page}.css 后 cp 同步到 dist/static。",
       "metadata": {"files": ["app/_static/markdown.css", "app/_static/page.css", "dist/static/markdown.css", "dist/static/page.css"], "verifyCommand": "diff -q app/_static/page.css dist/static/page.css && diff -q app/_static/markdown.css dist/static/markdown.css"}
     },
     {
       "id": 11,
       "subject": "Task 2: TOC 移到右侧（preview/nvim 布局）",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [10],
       "description": "改 #page-shell grid 列序为内容左/TOC 右，用 CSS order 处理 DOM 顺序，不改 React。cp 同步 dist。",
       "metadata": {"files": ["app/_static/page.css", "dist/static/page.css"]}
@@ -19,16 +19,16 @@
     {
       "id": 12,
       "subject": "Task 3: browse shell TOC 与顶栏扁平化",
-      "status": "pending",
+      "status": "completed",
       "description": "standalone-preview-server.js 内联 CSS：.toc-sidebar 去灰底留 border-left；.content-topbar 透明留 border-bottom。",
       "metadata": {"files": ["scripts/lib/standalone-preview-server.js"]}
     },
     {
       "id": 13,
       "subject": "Task 4: 端到端实测与回归（本机）",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [10, 11, 12],
-      "description": "USER-ORDERED GATE. 本机运行 browse 与 preview，用 Playwright 截图核对四类改动 + 亮/暗主题 + 无回归。",
+      "description": "USER-ORDERED GATE. 本机运行 browse 与 preview，用 Playwright 截图核对四类改动 + 亮/暗主题 + 无回归。已通过：browse 文档平铺无卡片、preview TOC 在右、dark 背景统一、窄屏抽屉从右滑入。",
       "metadata": {"files": [], "verifyCommand": "node scripts/mkdp-browse.js . --browser none", "userGate": true, "tags": ["user-gate"], "requireEvidenceTokens": [["before", "baseline", "current"], ["after", "flat", "fixed"]]}
     }
   ],
