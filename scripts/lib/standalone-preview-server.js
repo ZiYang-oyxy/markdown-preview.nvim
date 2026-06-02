@@ -200,6 +200,23 @@ function buildBrowseShellHtml() {
       outline: none;
     }
     .sidebar-search input:focus { border-color: var(--accent); }
+    .search-spinner {
+      position: absolute;
+      right: 22px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      margin-top: -7px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      display: none;
+      animation: mkdp-spin 0.6s linear infinite;
+      pointer-events: none;
+    }
+    .search-spinner.is-active { display: block; }
+    @keyframes mkdp-spin { to { transform: rotate(360deg); } }
+    .match-hl { color: var(--accent); font-weight: 600; }
 
     .sidebar-breadcrumb {
       display: flex;
@@ -621,6 +638,7 @@ function buildBrowseShellHtml() {
       <div class="sidebar-search">
         <span class="search-icon">${esc(icons.search)}</span>
         <input type="text" id="search-input" placeholder="Search files..." autocomplete="off" />
+        <span class="search-spinner" id="search-spinner" aria-hidden="true"></span>
       </div>
       <div class="sidebar-breadcrumb" id="breadcrumb"></div>
       <div class="sidebar-divider"></div>
@@ -950,11 +968,19 @@ function buildBrowseShellHtml() {
 
     /* ---- Search ---- */
     var searchRequestId = 0;
+    var searchDebounceTimer = null;
+    var searchSpinnerEl = document.getElementById('search-spinner');
+    function setSearchSpinner(active) {
+      if (!searchSpinnerEl) return;
+      if (active) searchSpinnerEl.classList.add('is-active');
+      else searchSpinnerEl.classList.remove('is-active');
+    }
 
     async function searchCurrentDirectory(query) {
       var requestId = ++searchRequestId;
       if (!query) {
         searchEntries = null;
+        setSearchSpinner(false);
         renderFileList(allEntries);
         return;
       }
@@ -971,12 +997,24 @@ function buildBrowseShellHtml() {
         if (requestId !== searchRequestId) return;
         searchEntries = [];
         fileListEl.innerHTML = '<div style="padding:12px 10px;color:var(--blocked-color);font-size:13px">' + escHtml(error.message || String(error)) + '</div>';
+      } finally {
+        if (requestId === searchRequestId) setSearchSpinner(false);
       }
     }
 
     searchInput.addEventListener('input', function() {
-      var q = searchInput.value.toLowerCase().trim();
-      searchCurrentDirectory(q);
+      var q = searchInput.value.trim();
+      if (searchDebounceTimer) { clearTimeout(searchDebounceTimer); searchDebounceTimer = null; }
+      if (!q) {
+        setSearchSpinner(false);
+        searchCurrentDirectory('');
+        return;
+      }
+      setSearchSpinner(true);
+      searchDebounceTimer = setTimeout(function() {
+        searchDebounceTimer = null;
+        searchCurrentDirectory(q);
+      }, 180);
     });
 
     /* ---- File icons ---- */
@@ -988,6 +1026,19 @@ function buildBrowseShellHtml() {
     }
 
     /* ---- File list ---- */
+    function highlightByPositions(text, baseOffset, positions) {
+      if (!positions || !positions.length) return escHtml(text);
+      var hit = {};
+      positions.forEach(function(p) { hit[p - baseOffset] = true; });
+      var out = '';
+      for (var i = 0; i < text.length; i += 1) {
+        var ch = escHtml(text[i]);
+        if (hit[i]) out += '<span class="match-hl">' + ch + '</span>';
+        else out += ch;
+      }
+      return out;
+    }
+
     function renderFileList(entries) {
       fileListEl.innerHTML = '';
       if (!entries || !entries.length) {
@@ -1016,7 +1067,13 @@ function buildBrowseShellHtml() {
 
         var nameSpan = document.createElement('span');
         nameSpan.className = 'file-name';
-        nameSpan.textContent = entry.name;
+        if (entry.matchPositions && entry.relativePath) {
+          // basename occupies the tail of relativePath; offset = relativePath.length - name.length
+          var nameOffset = entry.relativePath.length - entry.name.length;
+          nameSpan.innerHTML = highlightByPositions(entry.name, nameOffset, entry.matchPositions);
+        } else {
+          nameSpan.textContent = entry.name;
+        }
         info.appendChild(nameSpan);
 
         var meta = '';
@@ -1030,7 +1087,12 @@ function buildBrowseShellHtml() {
         if (meta) {
           var metaSpan = document.createElement('span');
           metaSpan.className = 'file-meta';
-          metaSpan.textContent = meta;
+          // when meta is the directory prefix of relativePath, highlight matched chars within it
+          if (entry.matchPositions && entry.relativePath && entry.relativePath.indexOf(meta + '/') === 0) {
+            metaSpan.innerHTML = highlightByPositions(meta, 0, entry.matchPositions);
+          } else {
+            metaSpan.textContent = meta;
+          }
           info.appendChild(metaSpan);
         }
 
@@ -1075,6 +1137,8 @@ function buildBrowseShellHtml() {
         searchEntries = null;
         searchInput.value = '';
         searchRequestId += 1;
+        if (searchDebounceTimer) { clearTimeout(searchDebounceTimer); searchDebounceTimer = null; }
+        setSearchSpinner(false);
         renderBreadcrumb(currentDir);
         renderFileList(allEntries);
       } catch (error) {
