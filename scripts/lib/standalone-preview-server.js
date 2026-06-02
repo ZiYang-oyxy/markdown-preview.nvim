@@ -303,7 +303,7 @@ function buildBrowseShellHtml() {
       justify-content: space-between;
       padding: 10px 16px;
       border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      background: transparent;
       flex-shrink: 0;
       min-height: 46px;
       gap: 8px;
@@ -432,7 +432,7 @@ function buildBrowseShellHtml() {
     .toc-sidebar {
       min-width: 0;
       overflow: hidden;
-      background: var(--surface);
+      background: transparent;
       border-left: 1px solid var(--border);
       display: none;
       flex-direction: column;
