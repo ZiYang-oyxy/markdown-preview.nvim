@@ -280,6 +280,19 @@ async function listBrowseDirectory(rootDir, requestPath = '.') {
 
 const FUZZY_SEPARATORS = new Set(['/', '\\', '-', '_', '.', ' '])
 
+// Scoring constants aligned with fzf's FuzzyMatchV2 (src/algo/algo.go). The key
+// invariant is SCORE_MATCH (16) >> BONUS_BOUNDARY (8): a consecutive run grows
+// linearly at 16/char so it dominates scattered matches that merely collect many
+// boundary bonuses across long directory paths. The earlier model used base 1,
+// which let boundary bonuses dominate and ranked scattered hits above consecutive
+// filename hits.
+const SCORE_MATCH = 16
+const BONUS_CONSECUTIVE = 4
+const BONUS_BOUNDARY = 8
+const FIRST_CHAR_MULTIPLIER = 2
+const GAP_START = -3
+const GAP_EXTENSION = -1
+
 // fzf-style subsequence fuzzy match with scoring.
 // Returns null when `query` is not a subsequence of `target`.
 // On match returns { score, positions } where positions are indices into `target`.
@@ -310,14 +323,17 @@ function fuzzyMatch(query, target) {
     }
 
     // base score for a matched character
-    score += 1
+    score += SCORE_MATCH
 
     // consecutive bonus: this match immediately follows the previous match
     if (prevMatchIndex !== -1 && foundAt === prevMatchIndex + 1) {
-      score += 5
+      score += BONUS_CONSECUTIVE
     }
 
-    // boundary bonus: start of target, after a separator, or camelCase boundary
+    // boundary bonus: start of target, after a separator, or camelCase boundary.
+    // The first matched character's boundary bonus is doubled — the leading
+    // character of the typed pattern carries more positional significance (fzf
+    // bonusFirstCharMultiplier).
     const isStart = foundAt === 0
     const prevChar = foundAt > 0 ? t[foundAt - 1] : ''
     const afterSeparator = FUZZY_SEPARATORS.has(prevChar)
@@ -328,14 +344,16 @@ function fuzzyMatch(query, target) {
       t[foundAt] === t[foundAt].toUpperCase() &&
       t[foundAt] !== t[foundAt].toLowerCase()
     if (isStart || afterSeparator || camelBoundary) {
-      score += 8
+      score += qi === 0 ? BONUS_BOUNDARY * FIRST_CHAR_MULTIPLIER : BONUS_BOUNDARY
     }
 
     // gap penalty: characters skipped since the previous match (or since start
-    // for the first matched character). Keeps tight matches ahead of loose ones.
+    // for the first matched character). A gap costs GAP_START up front plus
+    // GAP_EXTENSION per extra skipped char, with NO cap, so a match buried far
+    // behind a long directory prefix is penalised in proportion to that distance.
     const gap = prevMatchIndex === -1 ? foundAt : foundAt - prevMatchIndex - 1
     if (gap > 0) {
-      score -= Math.min(gap, 6)
+      score += GAP_START + (gap - 1) * GAP_EXTENSION
     }
 
     positions.push(foundAt)
@@ -415,13 +433,21 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
         continue
       }
 
+      // basename bonus: if the whole query is also a subsequence of the file name
+      // itself, add a fixed bonus (~one full consecutive run). This keeps results
+      // whose *filename* matches ahead of those matched only by scattering chars
+      // across directory segments. matchPositions stay indexed into relativePath,
+      // so front-end highlighting is unchanged.
+      const basenameMatch = fuzzyMatch(normalizedQuery, entry.name)
+      const basenameBonus = basenameMatch ? normalizedQuery.length * SCORE_MATCH : 0
+
       entries.push({
         name: entry.name,
         relativePath: entryRelativePath,
         kind: 'file',
         isMarkdown: isMarkdownPath(entryRealPath),
         isSymlink,
-        score: match.score,
+        score: match.score + basenameBonus,
         matchPositions: match.positions
       })
     }
