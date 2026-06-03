@@ -25,6 +25,7 @@
 
 - `toolbox-v0.1.0`：首个统一到 master 的 toolbox 包（browse fzf 搜索、scratch、固定右侧 TOC）。
 - `toolbox-v0.1.1`：browse fzf 排序修复（对齐 fzf 权重 + 文件名命中绝对优先）。
+- `toolbox-v0.1.2`：browse 文件名高亮错位修复（后端返回 `nameMatchPositions`，高亮文件名内匹配段而非散落的整路径位置）。
 
 ## 测试
 
