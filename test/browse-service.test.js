@@ -91,6 +91,38 @@ async function main() {
   // empty query returns zero-score empty-position match
   assert.deepStrictEqual(fuzzyMatch('', 'build'), { score: 0, positions: [] })
 
+  // ---- regression: filename consecutive match must beat cross-segment scatter ----
+  // Real-world bug: searching 'design' ranked a file whose name has no 'design'
+  // (chars scattered across long directory segments) above files whose *filename*
+  // contains a consecutive 'design'. The consecutive filename match must win.
+  {
+    const consecutiveInName =
+      'docs/superpowers/specs/2026-06-02-browse-fzf-search-design.md'
+    const scatteredAcrossDirs =
+      '.worktrees/browse-sidebar-search-filenames/scripts/lib/github-release-notes.js'
+    const nameMatch = fuzzyMatch('design', consecutiveInName)
+    const scatterMatch = fuzzyMatch('design', scatteredAcrossDirs)
+    assert.ok(nameMatch, "'design' should match the consecutive-filename path")
+    assert.ok(scatterMatch, "'design' should still match the scattered path")
+    assert.ok(
+      nameMatch.score > scatterMatch.score,
+      'consecutive filename match must outrank cross-segment scattered match ' +
+        `(name=${nameMatch.score} vs scatter=${scatterMatch.score})`
+    )
+  }
+
+  // a consecutive filename match beats chars scattered mid-word across segments
+  // (the real-world failure mode): chars buried inside words collect no boundary
+  // bonus and accrue uncapped gap penalties, so the consecutive run wins even
+  // when it sits behind a long directory prefix.
+  // 'design' scattered mid-word across segments: wi(d)gets r(e)lease pa(s)sive
+  // bu(i)ld lo(g)a motio(n) — no boundary bonuses, uncapped gap penalties.
+  assert.ok(
+    fuzzyMatch('design', 'a/very/long/nested/dir/path/here/the-design.md').score >
+      fuzzyMatch('design', 'widgets/release/passive/build/loga/motion.js').score,
+    'consecutive filename match should beat chars scattered mid-word across dirs'
+  )
+
   await withTempTree(async ({ root, symlinkSupport }) => {
     const listing = await listBrowseDirectory(root, '.')
     const listingNames = listing.entries.map((entry) => entry.name)
@@ -182,6 +214,17 @@ async function main() {
     const emptySearch = await searchBrowseFiles(root, '.', '')
     assert.deepStrictEqual(emptySearch.entries, [])
 
+    // matchPositions must still index into relativePath after the ranking change
+    // (front-end highlight depends on this).
+    for (const entry of recursiveSearch.entries) {
+      entry.matchPositions.forEach((pos) => {
+        assert.ok(
+          pos >= 0 && pos < entry.relativePath.length,
+          'matchPositions must index into relativePath'
+        )
+      })
+    }
+
     assert.throws(
       () => resolveBrowseTarget(root, '../outside.txt'),
       (error) => error && error.code === 'outside_root'
@@ -215,6 +258,45 @@ async function main() {
       )
     }
   })
+
+  // ---- basename bonus: filename hit ranks above deep scattered hit (e2e) ----
+  {
+    const tempRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'mkdp-fzf-'))
+    try {
+      // file whose *name* consecutively contains 'design'
+      await fs.promises.mkdir(path.join(tempRoot, 'docs', 'specs'), { recursive: true })
+      await fs.promises.writeFile(
+        path.join(tempRoot, 'docs', 'specs', 'browse-fzf-search-design.md'),
+        '# spec\n',
+        'utf8'
+      )
+      // file whose name has NO 'design'; chars only reachable by scattering across
+      // long directory segments: si(d)ebar / s(e)arch / (s)cripts / l(i)b / (g)ithub / (n)otes
+      await fs.promises.mkdir(
+        path.join(tempRoot, 'browse-sidebar-search', 'scripts', 'lib'),
+        { recursive: true }
+      )
+      await fs.promises.writeFile(
+        path.join(tempRoot, 'browse-sidebar-search', 'scripts', 'lib', 'github-release-notes.js'),
+        '// js\n',
+        'utf8'
+      )
+
+      const search = await searchBrowseFiles(tempRoot, '.', 'design')
+      const paths = search.entries.map((e) => e.relativePath)
+      assert.ok(
+        paths.indexOf('docs/specs/browse-fzf-search-design.md') !== -1,
+        'design spec file must be in results'
+      )
+      assert.strictEqual(
+        search.entries[0].relativePath,
+        'docs/specs/browse-fzf-search-design.md',
+        'consecutive-filename match must rank first, not the scattered deep path'
+      )
+    } finally {
+      await fs.promises.rm(tempRoot, { recursive: true, force: true })
+    }
+  }
 
   process.stdout.write('browse-service tests: ok\n')
 }
