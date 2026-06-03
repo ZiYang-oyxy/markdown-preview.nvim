@@ -433,13 +433,14 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
         continue
       }
 
-      // basename bonus: if the whole query is also a subsequence of the file name
-      // itself, add a fixed bonus (~one full consecutive run). This keeps results
-      // whose *filename* matches ahead of those matched only by scattering chars
-      // across directory segments. matchPositions stay indexed into relativePath,
-      // so front-end highlighting is unchanged.
-      const basenameMatch = fuzzyMatch(normalizedQuery, entry.name)
-      const basenameBonus = basenameMatch ? normalizedQuery.length * SCORE_MATCH : 0
+      // basename priority: whether the whole query is also a subsequence of the
+      // file name itself. This is the PRIMARY sort key — every filename match
+      // ranks above every non-filename match, regardless of path score, so a long
+      // path that merely collects many boundary bonuses can never slip between
+      // filename matches. score stays the pure relative-path score and
+      // matchPositions stay indexed into relativePath, so front-end highlighting
+      // is unchanged.
+      const nameMatched = fuzzyMatch(normalizedQuery, entry.name) !== null
 
       entries.push({
         name: entry.name,
@@ -447,7 +448,8 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
         kind: 'file',
         isMarkdown: isMarkdownPath(entryRealPath),
         isSymlink,
-        score: match.score + basenameBonus,
+        score: match.score,
+        nameMatched,
         matchPositions: match.positions
       })
     }
@@ -456,11 +458,22 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
   await walk(resolved.realPath, resolved.relativePath)
 
   entries.sort((left, right) => {
+    // primary: filename matches before non-filename matches (absolute priority)
+    if (left.nameMatched !== right.nameMatched) {
+      return left.nameMatched ? -1 : 1
+    }
+    // secondary: higher path score first
     if (right.score !== left.score) {
       return right.score - left.score
     }
     return left.relativePath.localeCompare(right.relativePath)
   })
+
+  // nameMatched is an internal ranking key; drop it so the response shape is
+  // unchanged for the front-end.
+  for (const entry of entries) {
+    delete entry.nameMatched
+  }
 
   return {
     rootPath: resolved.rootRealPath,
