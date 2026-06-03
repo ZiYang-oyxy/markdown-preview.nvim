@@ -189,6 +189,29 @@ async function main() {
       assert.ok(pos >= 0 && pos < phEntry.relativePath.length, 'position within relativePath')
     })
 
+    // nameMatchPositions index into the file NAME (offset 0) and must completely
+    // cover the query inside the basename. The relativePath positions scatter the
+    // query across directory segments (here 'p' lands in 'deep'), so the front end
+    // must use nameMatchPositions for file-name highlighting — this guards against
+    // the highlight-misalignment regression.
+    assert.ok(
+      Array.isArray(phEntry.nameMatchPositions),
+      'filename match should carry nameMatchPositions'
+    )
+    assert.strictEqual(
+      phEntry.nameMatchPositions.length,
+      'ph'.length,
+      'nameMatchPositions must completely cover the query within the file name'
+    )
+    phEntry.nameMatchPositions.forEach((pos) => {
+      assert.ok(pos >= 0 && pos < phEntry.name.length, 'name position within file name')
+    })
+    assert.strictEqual(
+      phEntry.nameMatchPositions.map((pos) => phEntry.name[pos]).join(''),
+      'ph',
+      'highlighted file-name chars must spell the query'
+    )
+
     // fzf subsequence across path segments: 'nda' hits notes/deep/alpha-phase.md
     const crossSegment = await searchBrowseFiles(root, '.', 'nda')
     const crossPaths = crossSegment.entries.map((e) => e.relativePath)
