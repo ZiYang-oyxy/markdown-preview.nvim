@@ -298,6 +298,78 @@ async function main() {
     }
   }
 
+  // ---- basename hit has ABSOLUTE priority: every filename match outranks every
+  // non-filename match, regardless of path score. A long scattered path that
+  // collects many boundary bonuses must NOT slip between filename matches. ----
+  {
+    const tempRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'mkdp-fzf-prio-'))
+    try {
+      // filename match, but driven to a LOW total score: 'design' is scattered
+      // mid-word inside the filename (no boundary bonuses) and the file sits deep
+      // (large first-char gap). Path score ~30, so with a fixed basename bonus its
+      // total (~126) sits BELOW the scattered .log below.
+      await fs.promises.mkdir(
+        path.join(tempRoot, 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx'),
+        { recursive: true }
+      )
+      await fs.promises.writeFile(
+        path.join(
+          tempRoot, 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx',
+          'widgetsreleasepassivebuildlogamotion.md'
+        ),
+        '# n\n',
+        'utf8'
+      )
+
+      // NO 'design' subsequence in filename ('release.log'); query reachable only
+      // by scattering across many separator-bounded segments, each granting a
+      // boundary bonus -> HIGH path score (~134) that, under a fixed bonus, slips
+      // ABOVE the low-scoring filename match above.
+      await fs.promises.mkdir(
+        path.join(tempRoot, 'de', 'si', 'gn', 'de', 'si', 'gn', 'de', 'si', 'gn', 'de', 'si', 'gn'),
+        { recursive: true }
+      )
+      await fs.promises.writeFile(
+        path.join(
+          tempRoot, 'de', 'si', 'gn', 'de', 'si', 'gn', 'de', 'si', 'gn', 'de', 'si', 'gn',
+          'release.log'
+        ),
+        'log\n',
+        'utf8'
+      )
+
+      const search = await searchBrowseFiles(tempRoot, '.', 'design')
+      const nameMatches = (p) => fuzzyMatch('design', path.basename(p)) !== null
+      const flags = search.entries.map((e) => nameMatches(e.relativePath))
+      // every filename match must come before every non-match: once a non-match
+      // appears, no filename match may follow.
+      let sawNonMatch = false
+      for (let i = 0; i < flags.length; i += 1) {
+        if (!flags[i]) {
+          sawNonMatch = true
+        } else if (sawNonMatch) {
+          assert.fail(
+            'filename match appeared after a non-match at rank ' + (i + 1) +
+              ' (' + search.entries[i].relativePath + '); basename priority not absolute'
+          )
+        }
+      }
+      // sanity: both files matched, and the scattered .log is present but ranked
+      // strictly after the filename match despite its higher path score.
+      assert.strictEqual(search.entries.length, 2, 'both files should match')
+      assert.ok(
+        search.entries[0].relativePath.endsWith('.md'),
+        'low-scoring filename match must still rank first (absolute basename priority)'
+      )
+      assert.ok(
+        search.entries[1].relativePath.endsWith('release.log'),
+        'higher-path-score scattered .log must rank last'
+      )
+    } finally {
+      await fs.promises.rm(tempRoot, { recursive: true, force: true })
+    }
+  }
+
   process.stdout.write('browse-service tests: ok\n')
 }
 
