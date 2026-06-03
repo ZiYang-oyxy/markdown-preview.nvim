@@ -437,11 +437,16 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
       // file name itself. This is the PRIMARY sort key — every filename match
       // ranks above every non-filename match, regardless of path score, so a long
       // path that merely collects many boundary bonuses can never slip between
-      // filename matches. score stays the pure relative-path score and
-      // matchPositions stay indexed into relativePath, so front-end highlighting
-      // is unchanged.
-      const nameMatched = fuzzyMatch(normalizedQuery, entry.name) !== null
+      // filename matches. score stays the pure relative-path score so ranking is
+      // unaffected.
+      const nameMatch = fuzzyMatch(normalizedQuery, entry.name)
+      const nameMatched = nameMatch !== null
 
+      // matchPositions index into relativePath and drive directory-segment
+      // highlighting. nameMatchPositions are computed against the file name alone
+      // (offset 0) so the front end can highlight the matched run *inside the
+      // file name* completely — the relativePath positions scatter most of the
+      // query across directory segments, leaving only a fragment in the basename.
       entries.push({
         name: entry.name,
         relativePath: entryRelativePath,
@@ -450,7 +455,8 @@ async function searchBrowseFiles(rootDir, requestPath = '.', query = '') {
         isSymlink,
         score: match.score,
         nameMatched,
-        matchPositions: match.positions
+        matchPositions: match.positions,
+        nameMatchPositions: nameMatch ? nameMatch.positions : []
       })
     }
   }

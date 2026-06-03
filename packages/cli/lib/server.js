@@ -1065,10 +1065,12 @@ function buildBrowseShellHtml() {
 
         var nameSpan = document.createElement('span');
         nameSpan.className = 'file-name';
-        if (entry.matchPositions && entry.relativePath) {
-          // basename occupies the tail of relativePath; offset = relativePath.length - name.length
-          var nameOffset = entry.relativePath.length - entry.name.length;
-          nameSpan.innerHTML = highlightByPositions(entry.name, nameOffset, entry.matchPositions);
+        if (entry.nameMatchPositions && entry.nameMatchPositions.length) {
+          // nameMatchPositions index into the file name itself (offset 0), so the
+          // matched run inside the file name highlights completely. (matchPositions
+          // index into relativePath and scatter most of the query across directory
+          // segments, leaving only a fragment in the basename — used for meta below.)
+          nameSpan.innerHTML = highlightByPositions(entry.name, 0, entry.nameMatchPositions);
         } else {
           nameSpan.textContent = entry.name;
         }
