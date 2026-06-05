@@ -485,6 +485,15 @@
       var width = dimensions.width
       var height = dimensions.height
 
+      // 给序列化出来的 data:image/svg+xml 注入显式 width/height,
+      // 否则浏览器无法解出 intrinsic size, lightbox 里 width:auto;height:auto 会算成 0×0
+      if (width) {
+        clonedSvg.setAttribute('width', width)
+      }
+      if (height) {
+        clonedSvg.setAttribute('height', height)
+      }
+
       var svgMarkup = serializer.serializeToString(clonedSvg)
       var dataUrl = svgToDataUrl(svgMarkup)
       var link = document.createElement('a')
