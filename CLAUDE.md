@@ -62,3 +62,24 @@ Please move or remove them before you switch branches.
 ## 代码同步约定
 
 `scripts/lib/browse-service.js` 与 `packages/cli/lib/browse-service.js` 必须逐字节一致（CLI 包是 scripts 版的副本）。改其一后用 `diff` 校验并同步另一份。同理 `scripts/lib/standalone-preview-server.js` 与 `packages/cli/lib/server.js` 的 browse shell 需保持同步（见 toolbox SOP 发布前检查）。
+
+## 图片放大查看器 (MkdpPreviewViewer)
+
+实时预览（nvim 用，走 `app/pages/preview.js`）、standalone 预览（browse / scratch / cli，走 `app/_static/standalone-runtime.js`）、离线导出 HTML（走 `app/_static/export.js`）三处的"点图片放大 + 工具栏（缩小/放大/1:1/适应/关闭）+ 毛玻璃 overlay + 拖拽 + 滚轮 + 键盘"交互 **共享同一份实现**：`app/_static/preview-viewer.js`，对外挂在 `window.MkdpPreviewViewer.bindPreviewInteractions(root)`。
+
+- standalone-runtime.js 内的 `bindPreviewInteractions` 只是个 thin wrapper，调用 `window.MkdpPreviewViewer.bindPreviewInteractions`。
+- 离线导出时，`export.js` 通过 `fetchAssetAsText('/_static/preview-viewer.js')` 把整个脚本内联进生成的 HTML，并在末尾追加 bootstrap `MkdpPreviewViewer.bindPreviewInteractions(document)`。所以离线 HTML 的图片交互与 nvim preview 完全一致。
+- 视觉样式（`.mkdp-preview-viewer` overlay 的毛玻璃、工具栏、CSS variables）在 `app/_static/page.css`，已被 export.js 的 `shouldInlineStylesheet` 内联进导出 HTML。
+- `app/pages/preview.js` 出于历史原因（webpack 打 ESM 模块）还保留着自己的一份相同逻辑。改 viewer 行为时**两边都要改**，并跑下文测试。
+
+**禁止**在 export.js 里再造一份 `mkdp-static-lightbox` 之类的"备份 lightbox"——离线页统一靠 `MkdpPreviewViewer`。
+
+### 自检
+
+改动 viewer 后用 playwright 跑：起 `createStandalonePreviewSession`，触发 `#mkdp-export-btn`，捕获生成的 HTML 字符串，确认：
+
+- 包含 `MkdpPreviewViewer`
+- 不包含 `mkdp-static-lightbox` / `:target`
+- 包含 `.mkdp-preview-viewer` 与 `backdrop-filter`
+
+再用 http server 起这份 HTML，模拟点击 `.markdown-body img` 或 `.markdown-body .mermaid svg`，确认 `#mkdp-preview-viewer` overlay 加上 `.is-open`，工具栏 5 个按钮齐全。
