@@ -20,6 +20,31 @@
 - **本地验证必做**：`node test/cli-package.test.js` + 临时目录 `npm install` 该 tarball 并跑 `mkdp --version` 核对版本；同时确认修复确实进了 tarball（grep 关键代码），而非只对了版本号。
 - **建 release 用已存在的 tag**：先 `git tag -a` 并 push tag，再 `gh release create ... --verify-tag`，避免 `gh` 从默认分支自动建 tag。
 - **发布后核对**：`gh release view <tag> --json tagName,targetCommitish,assets,url` —— `targetCommitish` 应为 `master`，资产名与版本一致；再 curl 资产 URL 确认可下载（HTTP 200）。
+- **release notes 必须包含「安装 / 升级」一节**（一键 curl 命令），方便用户直接复制使用。模板见下。
+
+#### Release notes 模板（每个 toolbox 版本都要照抄结构）
+
+```md
+## Markdown Preview Toolbox v<version>
+
+### <修复 / 改进 / 功能> （视情况选择）
+
+- 一句话主标题。后跟可选段落补充 why & how。
+- 视情况列多条 bullet。
+
+### 安装 / 升级
+
+​```sh
+curl -fsSL https://github.com/ZiYang-oyxy/markdown-preview.nvim/releases/download/toolbox-v<version>/install-markdown-preview-toolbox.sh | sh
+​```
+
+### 校验
+
+- 列出本次发布前已跑过的回归命令（如 `node test/cli-package.test.js`、其他相关脚本）。
+- 一句话说明 tarball 内确实带上了对应修复（避免「版本对了内容没对」）。
+```
+
+参考样板：[toolbox-v0.1.2](https://github.com/ZiYang-oyxy/markdown-preview.nvim/releases/tag/toolbox-v0.1.2)。新版本如果忘了写「安装 / 升级」一节，必须补一次 `gh release edit <tag> --notes-file ...` 修正。
 
 ### 已发布版本参考
 
