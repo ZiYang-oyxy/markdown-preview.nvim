@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-VERSION="${MKDP_TOOLBOX_VERSION:-0.1.3}"
+VERSION="${MKDP_TOOLBOX_VERSION:-0.1.4}"
 REPO="${MKDP_TOOLBOX_REPO:-ZiYang-oyxy/markdown-preview.nvim}"
 TAG="${MKDP_TOOLBOX_TAG:-toolbox-v${VERSION}}"
 ASSET="${MKDP_TOOLBOX_ASSET:-ziyang-oyxy-markdown-preview-toolbox-${VERSION}.tgz}"
