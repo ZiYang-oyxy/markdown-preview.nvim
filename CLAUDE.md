@@ -27,6 +27,7 @@
 - `toolbox-v0.1.1`：browse fzf 排序修复（对齐 fzf 权重 + 文件名命中绝对优先）。
 - `toolbox-v0.1.2`：browse 文件名高亮错位修复（后端返回 `nameMatchPositions`，高亮文件名内匹配段而非散落的整路径位置）。
 - `toolbox-v0.1.3`：dist 产物去 hash 化（`commons.js` / `main.js` / `webpack.js`），从根上消除 nvim 安装时 `untracked working tree files would be overwritten by checkout` 的撞车。
+- `toolbox-v0.1.4`：离线导出图片交互统一到 `MkdpPreviewViewer`，与 nvim 实时预览完全一致（缩放 / 拖拽 / 毛玻璃 overlay / 键盘）。
 
 ## 测试
 
