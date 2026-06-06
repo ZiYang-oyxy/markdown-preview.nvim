@@ -257,16 +257,12 @@
   }
 
   async function collectInlineStyles(pageClone, warnings) {
+    // 离线导出页用统一的 MkdpPreviewViewer 接管图片/Mermaid 的放大查看，
+    // 所以这里只保留 mermaid 节点本身的 layout 兜底样式，不再注入老的
+    // :target 静态 lightbox（毛玻璃 + 工具栏样式来自页面已内联的 page.css）。
     var styles = [
-      '.mkdp-static-image-link{display:block;cursor:zoom-in;text-decoration:none;}',
       '.mkdp-static-mermaid-image{display:block;width:100%;height:auto;}',
-      '.mkdp-static-mermaid-svg{display:block;width:100%;height:auto;max-width:100%;cursor:zoom-in;}',
-      '.mkdp-static-lightbox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,0.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9999;}',
-      '.mkdp-static-lightbox:target{display:flex;}',
-      '.mkdp-static-lightbox-stage{position:relative;display:flex;align-items:center;justify-content:center;max-width:min(96vw, 1800px);max-height:92vh;padding:24px;background:#fff;border-radius:16px;box-shadow:0 24px 80px rgba(15,23,42,0.35);overflow:auto;}',
-      '.mkdp-static-lightbox-close{position:absolute;top:10px;right:12px;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;background:rgba(15,23,42,0.08);color:#0f172a;font-size:22px;line-height:1;text-decoration:none;}',
-      '.mkdp-static-lightbox-close:hover{background:rgba(15,23,42,0.16);}',
-      '.mkdp-static-lightbox .mkdp-static-mermaid-image,.mkdp-static-lightbox .mkdp-static-mermaid-svg{width:auto;max-width:min(92vw, 1700px);height:auto;max-height:84vh;cursor:default;}'
+      '.mkdp-static-mermaid-svg{display:block;width:100%;height:auto;max-width:100%;}'
     ]
     var seenStyleTexts = new Set()
     var styleNodes = Array.from(document.querySelectorAll('style'))
@@ -440,26 +436,6 @@
     }
   }
 
-  function buildStaticLightbox(id, contentNode) {
-    var overlay = document.createElement('div')
-    overlay.id = id
-    overlay.className = 'mkdp-static-lightbox'
-
-    var stage = document.createElement('div')
-    stage.className = 'mkdp-static-lightbox-stage'
-
-    var close = document.createElement('a')
-    close.className = 'mkdp-static-lightbox-close'
-    close.href = '#'
-    close.setAttribute('aria-label', '关闭放大视图')
-    close.textContent = '×'
-
-    stage.appendChild(close)
-    stage.appendChild(contentNode)
-    overlay.appendChild(stage)
-    return overlay
-  }
-
   function convertMermaidSvgsToImages(root) {
     var mermaidNodes = Array.from(root.querySelectorAll('.mermaid'))
     mermaidNodes.forEach(function (node, index) {
@@ -485,8 +461,7 @@
       var width = dimensions.width
       var height = dimensions.height
 
-      // 给序列化出来的 data:image/svg+xml 注入显式 width/height,
-      // 否则浏览器无法解出 intrinsic size, lightbox 里 width:auto;height:auto 会算成 0×0
+      // 显式 width/height 让浏览器能解出 intrinsic size, 同时让放大视图里 svg 缩放正确
       if (width) {
         clonedSvg.setAttribute('width', width)
       }
@@ -494,54 +469,38 @@
         clonedSvg.setAttribute('height', height)
       }
 
-      var svgMarkup = serializer.serializeToString(clonedSvg)
-      var dataUrl = svgToDataUrl(svgMarkup)
-      var link = document.createElement('a')
-      link.className = 'mkdp-static-image-link'
-      var lightboxId = 'mkdp-static-lightbox-mermaid-' + (index + 1)
-      link.href = '#' + lightboxId
-      link.setAttribute('aria-label', '打开 Mermaid 图放大视图')
-      var overlayContent = null
+      // 离线导出统一交给 MkdpPreviewViewer 接管:
+      //   - 含 foreignObject 的图直接放原 svg(viewer 按 svg 类型绑定)
+      //   - 其余序列化为 data: URL 走 <img>(viewer 按 image 类型绑定)
+      // 不再外套 <a href="#..."> + :target lightbox.
+      node.textContent = ''
+      node.removeAttribute('data-processed')
+      node.removeAttribute('data-mkdp-mermaid-source')
 
       if (clonedSvg.querySelector('foreignObject')) {
         clonedSvg.style.display = 'block'
         clonedSvg.style.width = '100%'
         clonedSvg.style.height = 'auto'
-        if (width) {
-          clonedSvg.setAttribute('width', width)
-        }
-        if (height) {
-          clonedSvg.setAttribute('height', height)
-        }
-        link.appendChild(clonedSvg)
-        overlayContent = cleanupStaticSvg(clonedSvg.cloneNode(true))
-      } else {
-        var img = document.createElement('img')
-        img.className = 'mkdp-static-mermaid-image'
-        img.src = dataUrl
-        img.alt = node.getAttribute('aria-label') || ('Mermaid diagram ' + (index + 1))
-        img.setAttribute('loading', 'eager')
-        img.setAttribute('decoding', 'sync')
-        if (width) {
-          img.setAttribute('width', width)
-        }
-        if (height) {
-          img.setAttribute('height', height)
-        }
-        link.appendChild(img)
-        var lightboxImg = img.cloneNode(true)
-        lightboxImg.removeAttribute('loading')
-        lightboxImg.removeAttribute('decoding')
-        overlayContent = lightboxImg
+        clonedSvg.classList.add('mkdp-static-mermaid-svg')
+        node.appendChild(clonedSvg)
+        return
       }
 
-      node.textContent = ''
-      node.removeAttribute('data-processed')
-      node.removeAttribute('data-mkdp-mermaid-source')
-      node.appendChild(link)
-      if (overlayContent) {
-        node.appendChild(buildStaticLightbox(lightboxId, overlayContent))
+      var svgMarkup = serializer.serializeToString(clonedSvg)
+      var dataUrl = svgToDataUrl(svgMarkup)
+      var img = document.createElement('img')
+      img.className = 'mkdp-static-mermaid-image'
+      img.src = dataUrl
+      img.alt = node.getAttribute('aria-label') || ('Mermaid diagram ' + (index + 1))
+      img.setAttribute('loading', 'eager')
+      img.setAttribute('decoding', 'sync')
+      if (width) {
+        img.setAttribute('width', width)
       }
+      if (height) {
+        img.setAttribute('height', height)
+      }
+      node.appendChild(img)
     })
   }
 
@@ -631,6 +590,32 @@
     return clone
   }
 
+  async function fetchPreviewViewerScript(warnings) {
+    var url = toAbsoluteUrl('/_static/preview-viewer.js', window.location.href)
+    var text = await fetchAssetAsText(url, warnings)
+    if (!text) {
+      warnings.push('preview viewer 脚本读取失败, 离线 HTML 将无法放大查看图片')
+    }
+    return text || ''
+  }
+
+  function buildPreviewViewerBootstrap() {
+    return [
+      '(function () {',
+      '  function bind() {',
+      '    if (window.MkdpPreviewViewer && typeof window.MkdpPreviewViewer.bindPreviewInteractions === "function") {',
+      '      window.MkdpPreviewViewer.bindPreviewInteractions(document);',
+      '    }',
+      '  }',
+      '  if (document.readyState === "loading") {',
+      '    document.addEventListener("DOMContentLoaded", bind);',
+      '  } else {',
+      '    bind();',
+      '  }',
+      '})();'
+    ].join('\n')
+  }
+
   async function buildStandaloneHtml() {
     var warnings = []
     var pageClone = clonePageRoot()
@@ -638,7 +623,14 @@
     await inlineElementImages(pageClone, warnings)
     convertMermaidSvgsToImages(pageClone)
     var inlineStyles = await collectInlineStyles(pageClone, warnings)
+    var viewerScript = await fetchPreviewViewerScript(warnings)
     var title = escapeHtml(document.title || 'Markdown Preview')
+    var bodyParts = ['<body>', pageClone.outerHTML]
+    if (viewerScript) {
+      bodyParts.push('<script>' + viewerScript + '</script>')
+      bodyParts.push('<script>' + buildPreviewViewerBootstrap() + '</script>')
+    }
+    bodyParts.push('</body>')
     var html = [
       '<!DOCTYPE html>',
       '<html>',
@@ -647,12 +639,8 @@
       '<meta name="viewport" content="width=device-width, initial-scale=1">',
       '<title>' + title + '</title>',
       inlineStyles,
-      '</head>',
-      '<body>',
-      pageClone.outerHTML,
-      '</body>',
-      '</html>'
-    ].join('\n')
+      '</head>'
+    ].concat(bodyParts).concat(['</html>']).join('\n')
     return {
       html: html,
       warnings: warnings
