@@ -15,6 +15,12 @@
 - 补充 modal/Sheet 的 `overscroll-behavior` 和按钮触控反馈。
 - 修复 681–1179px 平板宽度下文档列表和目录入口不可达。
 - 在移动文档 Sheet 增加“删除当前文档”，覆盖取消和确认路径。
+- 移动端补充主题切换入口，并验证刷新后持久化。
+- 源文本自动保存失败时保留当前草稿和焦点；放弃未保存修改前增加二次确认。
+- 预览脚本启动失败时隐藏永久卡住的 iframe 占位，改为明确的可恢复失败态。
+- 导出超时错误统一增加“导出失败”语义，并保证操作按钮恢复可用。
+- 允许经 URL policy 校验的 HTTP(S) 外链在无 `opener` 的独立页打开，保留 opaque iframe 隔离。
+- 预览启动和快照请求增加 5 秒超时，避免 loading 或导出状态无限挂起。
 
 ## 独立黑盒结果
 
@@ -32,7 +38,7 @@
 | 测试集 | 结果 |
 | --- | --- |
 | Vitest 单元测试 | 18/18 通过 |
-| JavaScript Playwright E2E | 11/11 通过 |
+| JavaScript Playwright E2E | 16/16 通过 |
 | Python Playwright production 验收 | 15/15 通过 |
 | Studio production build | 通过 |
 | CLI package build | 通过 |
@@ -99,3 +105,4 @@
 - 极端复杂但未超过字节上限的 Markdown 仍可能短暂占用浏览器主线程。
 - 当前自动化以 Chromium 为发布基线；扩大公网用户范围前建议增加 WebKit/Firefox 和至少一台真实 iPhone 的冒烟测试。
 - 本地内容不加密；必须继续使用专用 origin，不能与其他应用共享 origin。
+- 多标签页可检测其他页面的变化，但不实现并发编辑冲突合并；个人项目阶段不引入 IndexedDB 或同步引擎。

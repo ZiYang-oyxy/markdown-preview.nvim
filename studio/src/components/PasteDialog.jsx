@@ -41,7 +41,13 @@ export default function PasteDialog({ onClose, onCreate, onImport, open }) {
       textareaRef.current?.focus()
       return
     }
-    if (onCreate(markdown) !== false) close()
+    const createError = onCreate(markdown)
+    if (createError) {
+      setClipboardError(createError)
+      textareaRef.current?.focus()
+      return
+    }
+    close()
   }
 
   return (

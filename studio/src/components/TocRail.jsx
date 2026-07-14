@@ -1,4 +1,5 @@
 export function TocList({ onSelect, toc }) {
+  if (toc === null) return <p className="toc-empty" role="status">正在生成目录…</p>
   if (toc.length === 0) return <p className="toc-empty">当前文档没有可用标题</p>
   return (
     <nav className="toc-list" aria-label="文档章节">

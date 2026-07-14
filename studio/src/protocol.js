@@ -1,5 +1,6 @@
 export const PROTOCOL_VERSION = 1
 export const MAX_MARKDOWN_BYTES = 1024 * 1024
+export const PREVIEW_RESPONSE_TIMEOUT_MS = 5_000
 
 const encoder = new TextEncoder()
 const TOKEN_PATTERN = /^[a-f0-9]{32,128}$/
@@ -171,6 +172,7 @@ export function createPreviewChannel(iframe, handlers = {}) {
   let requestId = 0
   let readyResolve
   let readyReject
+  let readyTimer = null
   let ready = new Promise((resolve, reject) => {
     readyResolve = resolve
     readyReject = reject
@@ -178,9 +180,14 @@ export function createPreviewChannel(iframe, handlers = {}) {
   const snapshots = new Map()
 
   function closePort(reason = new Error('预览连接已关闭。')) {
+    clearTimeout(readyTimer)
+    readyTimer = null
     port?.close()
     port = null
-    for (const { reject } of snapshots.values()) reject(reason)
+    for (const { reject, timer } of snapshots.values()) {
+      clearTimeout(timer)
+      reject(reason)
+    }
     snapshots.clear()
   }
 
@@ -188,6 +195,11 @@ export function createPreviewChannel(iframe, handlers = {}) {
     closePort()
     token = createToken()
     renderId = 0
+    readyTimer = setTimeout(() => {
+      const error = new Error('安全预览启动超时。')
+      readyReject(error)
+      closePort(error)
+    }, PREVIEW_RESPONSE_TIMEOUT_MS)
     const channel = new MessageChannel()
     port = channel.port1
     port.onmessage = ({ data }) => {
@@ -196,13 +208,18 @@ export function createPreviewChannel(iframe, handlers = {}) {
         handlers.onProtocolError?.(validation.error)
         return
       }
-      if (data.type === 'ready') readyResolve()
+      if (data.type === 'ready') {
+        clearTimeout(readyTimer)
+        readyTimer = null
+        readyResolve()
+      }
       if (data.type === 'rendered') handlers.onRendered?.(data)
       if (data.type === 'error') handlers.onError?.(data)
       if (data.type === 'snapshot') {
         const pending = snapshots.get(data.requestId)
         if (pending) {
           snapshots.delete(data.requestId)
+          clearTimeout(pending.timer)
           pending.resolve(data.html)
         }
       }
@@ -248,7 +265,12 @@ export function createPreviewChannel(iframe, handlers = {}) {
       await ready
       requestId += 1
       const response = new Promise((resolve, reject) => {
-        snapshots.set(requestId, { resolve, reject })
+        const currentRequestId = requestId
+        const timer = setTimeout(() => {
+          snapshots.delete(currentRequestId)
+          reject(new Error('预览响应超时，请刷新页面后重试。'))
+        }, PREVIEW_RESPONSE_TIMEOUT_MS)
+        snapshots.set(currentRequestId, { resolve, reject, timer })
       })
       port.postMessage({
         type: 'requestSnapshot',

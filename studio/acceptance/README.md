@@ -32,6 +32,8 @@
 14. 900px 平板宽度下的文档列表和目录入口。
 15. console error 与未捕获异常必须为零。
 
+JavaScript E2E 另外覆盖移动端主题切换持久化、HTTPS 外链无 `opener` 弹出、源文本保存失败后保留草稿与确认放弃、预览启动失败恢复界面，以及导出超时恢复。
+
 50 份文档、4 MiB 总量、Quota 回滚和损坏数据恢复由确定性更高的 Vitest 单元测试覆盖，避免在 UI 层重复制造大量慢用例。
 
 ## 运行方法
@@ -73,3 +75,4 @@ npm --prefix studio audit --audit-level=high
 - WebKit、Firefox 和真实 iOS Safari 属于发布到大范围公网前的兼容性扩展矩阵，不在当前个人项目的阻塞范围内。
 - sandbox 能限制权限，不能完全消除病态 Markdown 造成的 CPU/内存压力；输入和 Mermaid 已有硬限制，但仍需保留这一残余风险。
 - `localStorage` 测试基于专用 origin 前提；共享 origin 子目录部署不属于受支持的安全部署方式。
+- 多标签页同时编辑不提供冲突解析；个人项目阶段优先保持本地存储模型简单可维护。

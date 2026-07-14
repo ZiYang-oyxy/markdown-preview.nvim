@@ -2,17 +2,21 @@ import { useEffect, useRef, useState } from 'react'
 
 export default function SourceDialog({ document, onClose, onSave, open }) {
   const dialogRef = useRef(null)
+  const textareaRef = useRef(null)
   const timerRef = useRef(null)
   const latestRef = useRef(document?.markdown ?? '')
   const savedRef = useRef(document?.markdown ?? '')
   const [draft, setDraft] = useState(document?.markdown ?? '')
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (!open || !document) return
     latestRef.current = document.markdown
     savedRef.current = document.markdown
     setDraft(document.markdown)
+    setSaveError('')
     dialogRef.current?.showModal()
+    requestAnimationFrame(() => textareaRef.current?.focus())
   }, [document?.id, open])
 
   useEffect(() => () => clearTimeout(timerRef.current), [])
@@ -22,13 +26,32 @@ export default function SourceDialog({ document, onClose, onSave, open }) {
   function flush() {
     clearTimeout(timerRef.current)
     if (latestRef.current !== savedRef.current) {
-      onSave(latestRef.current)
+      const error = onSave(latestRef.current)
+      if (error) {
+        setSaveError(error)
+        return false
+      }
       savedRef.current = latestRef.current
+      setSaveError('')
     }
+    return true
   }
 
   function close() {
-    flush()
+    if (!flush()) {
+      textareaRef.current?.focus()
+      return
+    }
+    dialogRef.current?.close()
+    onClose()
+  }
+
+  function discardAndClose() {
+    if (!window.confirm('确认放弃未保存的修改？此操作无法撤销。')) {
+      textareaRef.current?.focus()
+      return
+    }
+    clearTimeout(timerRef.current)
     dialogRef.current?.close()
     onClose()
   }
@@ -64,12 +87,19 @@ export default function SourceDialog({ document, onClose, onSave, open }) {
           autoComplete="off"
           name="markdown-source"
           onChange={(event) => change(event.target.value)}
+          ref={textareaRef}
           spellCheck="false"
           value={draft}
         />
+        {saveError ? <p className="inline-alert" role="alert">{saveError} 草稿仍保留在当前窗口。</p> : null}
         <div className="modal-footer">
           <span>修改会自动保存到当前文档</span>
-          <button className="primary-button" onClick={close} type="button">完成</button>
+          <div>
+            {saveError ? (
+              <button className="danger-button" onClick={discardAndClose} type="button">放弃未保存修改</button>
+            ) : null}
+            <button className="primary-button" onClick={close} type="button">完成</button>
+          </div>
         </div>
       </div>
     </dialog>

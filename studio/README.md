@@ -54,7 +54,7 @@ Studio 不需要这些能力。把旧动态服务暴露到内网或公网会重�
 - `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()`
 - `Cross-Origin-Opener-Policy: same-origin`
 
-顶层页面的 CSP 允许同源脚本、样式和 sandbox iframe，但禁止网络连接。`studio-preview.html` 使用更严格的 CSP，并由父页面以 `sandbox="allow-scripts"` 加载，不能添加 `allow-same-origin`。
+顶层页面的 CSP 允许同源脚本、样式和 sandbox iframe，但禁止网络连接。`studio-preview.html` 使用更严格的 CSP，父页面只给 iframe 开放脚本和外链弹窗能力；不能添加 `allow-same-origin`。外链仅允许通过校验的 HTTP(S) 地址，并强制 `noopener`/`noreferrer`。
 
 公网部署若需要身份认证，应由静态托管平台或反向代理完成；不要为了登录功能给 Studio 增加应用服务器或文档上传 API。反向代理也必须把 Studio 放在专用 origin，而不是与业务应用共享 origin。
 
@@ -66,6 +66,7 @@ Studio 不需要这些能力。把旧动态服务暴露到内网或公网会重�
 - 每份文档使用独立 key；新粘贴不会覆盖当前文档。
 - 清除站点数据或浏览器隐私数据会删除这些临时文档。
 - 不使用 IndexedDB、数据库、账号系统、Service Worker 或云同步。
+- 其他标签页的变化会触发刷新提示，但不做冲突合并；不要在多个标签页同时编辑同一份文档。
 
 ## 安全渲染边界
 

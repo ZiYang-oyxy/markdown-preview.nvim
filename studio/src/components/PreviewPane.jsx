@@ -8,6 +8,7 @@ const PreviewPane = forwardRef(function PreviewPane({ markdown, onError, onToc, 
   const renderCompleteRef = useRef(Promise.resolve())
   const resolveRenderRef = useRef(null)
   const [rendering, setRendering] = useState(true)
+  const [failure, setFailure] = useState('')
 
   useImperativeHandle(ref, () => ({
     scrollTo(headingId) {
@@ -24,14 +25,18 @@ const PreviewPane = forwardRef(function PreviewPane({ markdown, onError, onToc, 
       onRendered(message) {
         resolveRenderRef.current?.()
         setRendering(false)
+        setFailure('')
         onToc(message.toc)
       },
       onError(message) {
         resolveRenderRef.current?.()
         setRendering(false)
+        setFailure(message.message)
         onError(message.message)
       },
       onProtocolError(message) {
+        setRendering(false)
+        setFailure(message)
         onError(message)
       },
     })
@@ -48,13 +53,16 @@ const PreviewPane = forwardRef(function PreviewPane({ markdown, onError, onToc, 
 
   useEffect(() => {
     setRendering(true)
+    setFailure('')
     renderCompleteRef.current = new Promise((resolve) => {
       resolveRenderRef.current = resolve
     })
     channelRef.current?.render(markdown, theme).catch(() => {
       resolveRenderRef.current?.()
       setRendering(false)
-      onError('安全预览无法启动，请刷新页面重试。')
+      const message = '安全预览无法启动，请刷新页面重试。'
+      setFailure(message)
+      onError(message)
     })
   }, [markdown, onError, theme])
 
@@ -63,11 +71,20 @@ const PreviewPane = forwardRef(function PreviewPane({ markdown, onError, onToc, 
       <div className="render-line" data-active={rendering ? 'true' : 'false'} />
       <iframe
         className="preview-frame"
+        hidden={Boolean(failure)}
         ref={iframeRef}
         referrerPolicy="no-referrer"
-        sandbox="allow-scripts"
+        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
         title="Markdown 渲染结果"
       />
+      {failure ? (
+        <section className="preview-failure" role="status" aria-label="预览暂时不可用">
+          <p className="eyebrow">安全预览已停止</p>
+          <h2>预览暂时不可用</h2>
+          <p>{failure}</p>
+          <p>源文本和其他临时文档仍保存在当前浏览器中。</p>
+        </section>
+      ) : null}
       {rendering ? <span className="rendering-label" role="status">正在安全渲染…</span> : null}
     </div>
   )

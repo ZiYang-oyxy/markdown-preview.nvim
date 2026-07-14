@@ -52,3 +52,11 @@ test('mobile has no page-level horizontal overflow and respects reduced motion',
   expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client)
   await expect(page.locator('.render-line')).toHaveCSS('animation-duration', '1e-05s')
 })
+
+test('mobile can switch theme and keeps it after reload', async ({ page }) => {
+  await page.getByRole('button', { name: '切换深色主题' }).click()
+  await expect(page.locator('.studio-shell')).toHaveAttribute('data-theme', 'dark')
+  await page.reload()
+  await expect(page.locator('.studio-shell')).toHaveAttribute('data-theme', 'dark')
+  await expect(page.getByRole('button', { name: '切换浅色主题' })).toBeVisible()
+})

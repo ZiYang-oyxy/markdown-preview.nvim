@@ -61,7 +61,7 @@ function EmptyState({ onCreate, onImport }) {
 export default function App() {
   const [workspace, setWorkspace] = useState(loadWorkspace)
   const [theme, setTheme] = useState(loadTheme)
-  const [toc, setToc] = useState([])
+  const [toc, setToc] = useState(null)
   const [pasteOpen, setPasteOpen] = useState(false)
   const [sourceOpen, setSourceOpen] = useState(false)
   const [documentsOpen, setDocumentsOpen] = useState(false)
@@ -74,7 +74,7 @@ export default function App() {
 
   const refresh = useCallback((notify = false) => {
     setWorkspace(loadWorkspace())
-    if (notify) setStatus('已同步其他标签页的更改')
+    if (notify) setStatus('检测到其他标签页的更改')
   }, [])
 
   useEffect(() => subscribeToStorage(() => refresh(true)), [refresh])
@@ -87,26 +87,29 @@ export default function App() {
     )
   }, [theme])
 
-  const handlePreviewError = useCallback((message) => setAlert(message), [])
+  const handlePreviewError = useCallback((message) => {
+    setAlert(message)
+    setToc([])
+  }, [])
   const handleToc = useCallback((items) => setToc(items), [])
 
   function create(markdown) {
     try {
       createDocument(markdown)
       setAlert('')
-      setToc([])
+      setToc(null)
       refresh()
-      return true
+      return ''
     } catch (error) {
       setAlert(error.message)
-      return false
+      return error.message
     }
   }
 
   function selectDocument(id) {
     setActiveDocument(id)
     setDocumentsOpen(false)
-    setToc([])
+    setToc(null)
     refresh()
   }
 
@@ -114,16 +117,19 @@ export default function App() {
     try {
       updateDocument(workspace.document.id, markdown)
       setAlert('')
+      setToc(null)
       refresh()
+      return ''
     } catch (error) {
       setAlert(error.message)
+      return error.message
     }
   }
 
   function removeDocument() {
     if (!window.confirm(`确认删除“${workspace.document.title}”？此操作无法撤销。`)) return false
     deleteDocument(workspace.document.id)
-    setToc([])
+    setToc(null)
     refresh()
     return true
   }
@@ -139,8 +145,8 @@ export default function App() {
     try {
       if (file.size > 1024 * 1024) throw new Error('单份文档不能超过 1 MiB。')
       const markdown = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer())
-      create(markdown)
-      setPasteOpen(false)
+      const createError = create(markdown)
+      if (!createError) setPasteOpen(false)
     } catch (error) {
       setAlert(error instanceof TypeError ? '文件不是有效的 UTF-8 文本。' : error.message)
     }
@@ -165,7 +171,7 @@ export default function App() {
       downloadHtml(html, exportFilename(workspace.document.title))
       setStatus('HTML 已导出；文件不包含脚本或远程资源')
     } catch (error) {
-      setAlert(error.message || '导出失败，请重试。')
+      setAlert(`导出失败：${error.message || '请重试。'}`)
     } finally {
       setExporting(false)
     }
@@ -219,7 +225,7 @@ export default function App() {
           )}
         </main>
 
-        <TocRail onSelect={scrollToHeading} toc={toc} />
+        <TocRail onSelect={scrollToHeading} toc={active ? toc : []} />
       </div>
 
       <button className="mobile-create" onClick={() => setPasteOpen(true)} type="button" aria-label="新建文档">＋</button>
@@ -260,7 +266,7 @@ export default function App() {
         ) : null}
       </Sheet>
       <Sheet label="本文目录" onClose={() => setTocOpen(false)} open={tocOpen}>
-        <TocList onSelect={scrollToHeading} toc={toc} />
+        <TocList onSelect={scrollToHeading} toc={active ? toc : []} />
       </Sheet>
     </div>
   )

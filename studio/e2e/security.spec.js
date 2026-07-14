@@ -129,3 +129,20 @@ test('opaque sandbox cannot read parent storage and forged window messages are i
   await page.waitForTimeout(100)
   await expect(frame.getByRole('heading', { name: 'Forged' })).toHaveCount(0)
 })
+
+test('allowed HTTPS links open in a separate page without an opener', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.getByRole('button', { name: '粘贴新文档' }).first().click()
+  const dialog = page.getByRole('dialog', { name: '粘贴 Markdown' })
+  await dialog.getByLabel('Markdown 源文本').fill('[OpenAI](https://openai.com/)')
+  await dialog.getByRole('button', { name: '渲染为新文档' }).click()
+
+  const popupPromise = page.waitForEvent('popup')
+  await page.frameLocator('.preview-frame').getByRole('link', { name: 'OpenAI' }).click()
+  const popup = await popupPromise
+  expect(popup.url()).toMatch(/^https:\/\/openai\.com\//)
+  expect(await popup.evaluate(() => window.opener)).toBeNull()
+  await popup.close()
+})

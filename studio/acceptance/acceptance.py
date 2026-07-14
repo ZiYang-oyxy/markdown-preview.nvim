@@ -216,12 +216,13 @@ def desktop_suite(playwright: Playwright) -> None:
         dialog.get_by_label("Markdown 源文本").fill("# 超限\n" + "a" * (1024 * 1024))
         dialog.get_by_role("button", name="渲染为新文档").click()
         assert dialog.is_visible()
-        assert "1 MiB" in page.get_by_role("alert").inner_text()
+        dialog.get_by_role("alert").filter(has_text="1 MiB").wait_for()
         page.keyboard.press("Escape")
 
     run_case("单文档 1 MiB 硬限制", oversized_document)
 
     def accessibility_dom_audit() -> None:
+        page.reload(wait_until="networkidle")
         findings = page.evaluate("""
           () => {
             const visible = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length)
@@ -247,7 +248,8 @@ def desktop_suite(playwright: Playwright) -> None:
         if not findings["hasSkipLink"]:
             record("跳过导航链接", "WARN", "键盘用户缺少直接跳到主内容的入口")
         skip_link = page.locator(".skip-link")
-        skip_link.focus()
+        page.keyboard.press("Tab")
+        assert skip_link.evaluate("el => el === document.activeElement"), "first Tab did not focus skip link"
         skip_box = skip_link.bounding_box()
         assert skip_box and skip_box["y"] >= 0, "skip link is clipped while focused"
         page.keyboard.press("Enter")
@@ -340,7 +342,9 @@ def tablet_suite(playwright: Playwright) -> None:
     page.set_default_timeout(10_000)
     attach_diagnostics(page)
     reset(page)
-    paste(page, "# 平板验收\n\n## 章节\n\n内容")
+    lead_in = "\n\n".join(f"跳转前的阅读内容 {index}" for index in range(24))
+    tail = "\n\n".join(f"章节后的阅读内容 {index}" for index in range(24))
+    paste(page, f"# 平板验收\n\n{lead_in}\n\n## 章节\n\n{tail}")
 
     def tablet_navigation() -> None:
         assert page.get_by_role("button", name="打开文档列表").is_visible()
@@ -348,9 +352,27 @@ def tablet_suite(playwright: Playwright) -> None:
         page.get_by_role("button", name="打开文档列表").click()
         page.get_by_role("dialog", name="文档").wait_for()
         page.keyboard.press("Escape")
+        heading = page.frame_locator(".preview-frame").get_by_role("heading", name="章节")
+        heading.wait_for()
         page.get_by_role("button", name="打开本文目录").click()
-        page.get_by_role("dialog", name="目录").wait_for()
+        toc = page.get_by_role("dialog", name="目录")
+        toc_button = toc.get_by_role("button", name="跳转到章节")
+        toc_button.wait_for()
         page.screenshot(path=ARTIFACTS / "tablet-toc-sheet.png", full_page=True)
+        toc_button.click()
+        toc.wait_for(state="hidden")
+        heading_top = heading.evaluate("""
+          el => new Promise((resolve) => {
+            const deadline = performance.now() + 2000
+            const check = () => {
+              const top = el.getBoundingClientRect().top
+              if ((top >= 20 && top <= 64) || performance.now() >= deadline) resolve(top)
+              else requestAnimationFrame(check)
+            }
+            check()
+          })
+        """)
+        assert 20 <= heading_top <= 64, f"heading top after TOC click: {heading_top}"
 
     run_case("平板宽度仍可访问文档与目录", tablet_navigation)
     context.close()

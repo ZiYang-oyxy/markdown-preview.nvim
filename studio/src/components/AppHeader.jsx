@@ -24,6 +24,23 @@ export default function AppHeader({
     <header className="app-header">
       <div className="mobile-header-actions">
         <button
+          className="icon-button mobile-theme-button"
+          onClick={onToggleTheme}
+          type="button"
+          aria-label={theme === 'light' ? '切换深色主题' : '切换浅色主题'}
+        >
+          <Icon>
+            {theme === 'light' ? (
+              <path d="M19 15.5A7.8 7.8 0 0 1 8.5 5 7.8 7.8 0 1 0 19 15.5Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
+            ) : (
+              <>
+                <circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+              </>
+            )}
+          </Icon>
+        </button>
+        <button
           className="icon-button"
           disabled={!hasDocument}
           onClick={onOpenDocuments}

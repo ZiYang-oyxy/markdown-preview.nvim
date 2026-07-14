@@ -53,6 +53,27 @@ test('source editing updates only the active document and deletion is confirmed'
   await expect(page.frameLocator('.preview-frame').getByRole('heading', { name: 'B 已修改' })).toBeVisible()
 })
 
+test('failed source save keeps the draft visible until the user discards it', async ({ page }) => {
+  await pasteDocument(page, '# 原始内容')
+  await page.getByRole('button', { name: '查看源文本' }).click()
+  const sourceDialog = page.getByRole('dialog', { name: '查看或编辑源文本' })
+  const source = sourceDialog.getByLabel('Markdown 源文本')
+  await expect(source).toBeFocused()
+  await source.fill(`# 超限\n${'a'.repeat(1024 * 1024)}`)
+  await expect(sourceDialog.getByRole('alert')).toContainText('1 MiB')
+  await sourceDialog.getByRole('button', { name: '完成' }).click()
+  await expect(sourceDialog).toBeVisible()
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await sourceDialog.getByRole('button', { name: '放弃未保存修改' }).click()
+  await expect(sourceDialog).toBeVisible()
+  await expect(source).toHaveValue(/# 超限/)
+  page.once('dialog', (dialog) => dialog.accept())
+  await sourceDialog.getByRole('button', { name: '放弃未保存修改' }).click()
+  await expect(sourceDialog).toBeHidden()
+  await page.reload()
+  await expect(page.frameLocator('.preview-frame').getByRole('heading', { name: '原始内容' })).toBeVisible()
+})
+
 test('file import rejects invalid UTF-8 and accepts Markdown text', async ({ page }) => {
   const input = page.locator('input[type="file"]')
   await input.setInputFiles({
