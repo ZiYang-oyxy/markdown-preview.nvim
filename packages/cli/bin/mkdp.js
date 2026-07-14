@@ -10,6 +10,7 @@ function usage() {
     '  preview [file|-]   Preview a Markdown file in the browser',
     '  export [file|-]    Export Markdown to a standalone HTML file',
     '  browse [dir]       Browse Markdown files in a directory',
+    '  studio             Open the independent paste-first Markdown Studio',
     '',
     'Options:',
     '  -h, --help         Show help',
@@ -51,6 +52,11 @@ async function main(argv) {
 
   if (command === 'browse') {
     await require('../lib/commands/browse').run(argv.slice(3))
+    return 0
+  }
+
+  if (command === 'studio') {
+    await require('../lib/commands/studio').run(argv.slice(3))
     return 0
   }
 

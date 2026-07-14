@@ -4,6 +4,18 @@
 
 `markdown-preview` is a Markdown preview and export toolbox.
 
+## Independent Markdown Studio
+
+The repository now includes a paste-first static Studio that is independent from the legacy Browser/Preview server. It keeps multiple temporary documents in constrained browser storage, renders Markdown, KaTeX, syntax highlighting, and Mermaid inside an opaque sandbox, and exports inert HTML.
+
+```bash
+npm install --prefix studio
+npm run build-studio
+npm run studio
+```
+
+For public or intranet deployment, publish **only** `studio/dist/` at the root of a **dedicated origin**. Do not mount it under an existing application's origin and do not expose the legacy dynamic server as the Studio backend. See [`studio/README.md`](studio/README.md) for the security model, deployment headers, storage limits, and verification commands.
+
 It gives you one local runtime with multiple entrypoints:
 
 - CLI tools for browser preview, standalone HTML export, directory browsing, and Playwright validation

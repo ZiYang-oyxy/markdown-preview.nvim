@@ -42,22 +42,27 @@ function requireDirectory(dirPath, label) {
 }
 
 function syncCliPackageAssets(options = {}) {
-  const repoRoot = options.repoRoot || path.resolve(__dirname, '..')
+  const repoRoot = options.repoRoot || (options.distDir ? path.dirname(options.distDir) : path.resolve(__dirname, '..'))
   const distDir = options.distDir || path.join(repoRoot, 'dist')
   const packageRoot = options.packageRoot || path.join(repoRoot, 'packages', 'cli')
   const sourceWebDir = path.join(distDir, 'web')
   const sourceStaticDir = path.join(distDir, 'static')
+  const sourceStudioDir = path.join(repoRoot, 'studio', 'dist')
   const targetAssetDir = path.join(packageRoot, 'assets')
   const targetWebDir = path.join(targetAssetDir, 'web')
   const targetStaticDir = path.join(targetAssetDir, 'static')
+  const targetStudioDir = path.join(targetAssetDir, 'studio')
 
   requireDirectory(sourceWebDir, 'dist web assets')
   requireDirectory(sourceStaticDir, 'dist static assets')
+  requireDirectory(sourceStudioDir, 'Studio dist assets')
 
   ensureEmptyDir(targetWebDir)
   ensureEmptyDir(targetStaticDir)
+  ensureEmptyDir(targetStudioDir)
   copyTree(sourceWebDir, targetWebDir)
   copyTree(sourceStaticDir, targetStaticDir)
+  copyTree(sourceStudioDir, targetStudioDir)
 }
 
 function main() {

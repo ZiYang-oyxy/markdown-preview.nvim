@@ -5,11 +5,16 @@ import { createPreviewChannel } from '../protocol.js'
 const PreviewPane = forwardRef(function PreviewPane({ markdown, onError, onToc, theme }, ref) {
   const iframeRef = useRef(null)
   const channelRef = useRef(null)
+  const renderCompleteRef = useRef(Promise.resolve())
+  const resolveRenderRef = useRef(null)
   const [rendering, setRendering] = useState(true)
 
   useImperativeHandle(ref, () => ({
     scrollTo(headingId) {
       return channelRef.current?.scrollTo(headingId)
+    },
+    requestSnapshot() {
+      return renderCompleteRef.current.then(() => channelRef.current?.requestSnapshot())
     },
   }), [])
 
@@ -17,10 +22,12 @@ const PreviewPane = forwardRef(function PreviewPane({ markdown, onError, onToc, 
     const iframe = iframeRef.current
     const channel = createPreviewChannel(iframe, {
       onRendered(message) {
+        resolveRenderRef.current?.()
         setRendering(false)
         onToc(message.toc)
       },
       onError(message) {
+        resolveRenderRef.current?.()
         setRendering(false)
         onError(message.message)
       },
@@ -33,6 +40,7 @@ const PreviewPane = forwardRef(function PreviewPane({ markdown, onError, onToc, 
     // one-time preview handshake bound to an obsolete MessagePort.
     iframe.src = `./studio-preview.html?session=${crypto.randomUUID()}`
     return () => {
+      resolveRenderRef.current?.()
       channelRef.current = null
       channel.destroy()
     }
@@ -40,7 +48,11 @@ const PreviewPane = forwardRef(function PreviewPane({ markdown, onError, onToc, 
 
   useEffect(() => {
     setRendering(true)
+    renderCompleteRef.current = new Promise((resolve) => {
+      resolveRenderRef.current = resolve
+    })
     channelRef.current?.render(markdown, theme).catch(() => {
+      resolveRenderRef.current?.()
       setRendering(false)
       onError('安全预览无法启动，请刷新页面重试。')
     })

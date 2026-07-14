@@ -8,6 +8,7 @@ import PreviewPane from './components/PreviewPane.jsx'
 import Sheet from './components/Sheet.jsx'
 import SourceDialog from './components/SourceDialog.jsx'
 import TocRail, { TocList } from './components/TocRail.jsx'
+import { buildExportDocument, downloadHtml, exportFilename } from './export.js'
 import {
   PREFERENCES_KEY,
   createDocument,
@@ -67,6 +68,7 @@ export default function App() {
   const [tocOpen, setTocOpen] = useState(false)
   const [alert, setAlert] = useState('')
   const [status, setStatus] = useState('')
+  const [exporting, setExporting] = useState(false)
   const fileInputRef = useRef(null)
   const previewChannelRef = useRef(null)
 
@@ -142,6 +144,20 @@ export default function App() {
     setTocOpen(false)
   }
 
+  async function exportDocument() {
+    setExporting(true)
+    try {
+      const bodyHtml = await previewChannelRef.current.requestSnapshot()
+      const html = buildExportDocument({ title: workspace.document.title, bodyHtml })
+      downloadHtml(html, exportFilename(workspace.document.title))
+      setStatus('HTML 已导出；文件不包含脚本或远程资源')
+    } catch (error) {
+      setAlert(error.message || '导出失败，请重试。')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const active = workspace.document
 
   return (
@@ -168,7 +184,13 @@ export default function App() {
           {status ? <div className="sync-status" role="status">{status}</div> : null}
           {active ? (
             <>
-              <DocumentToolbar document={active} onDelete={removeDocument} onSource={() => setSourceOpen(true)} />
+              <DocumentToolbar
+                document={active}
+                exporting={exporting}
+                onDelete={removeDocument}
+                onExport={exportDocument}
+                onSource={() => setSourceOpen(true)}
+              />
               <PreviewPane
                 key={active.id}
                 markdown={active.markdown}

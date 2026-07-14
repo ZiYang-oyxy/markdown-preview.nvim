@@ -33,9 +33,12 @@ function initialize(event) {
 
     if (data.type === 'render') {
       lastRenderId = data.renderId
+      const stagingRoot = document.createElement('div')
       try {
-        const result = await renderMarkdown(data.markdown, root, { theme: data.theme })
+        const result = await renderMarkdown(data.markdown, stagingRoot, { theme: data.theme })
         if (lastRenderId !== data.renderId) return
+        root.replaceChildren(...stagingRoot.childNodes)
+        root.dataset.theme = data.theme
         post('rendered', {
           renderId: data.renderId,
           height: Math.min(10_000_000, Math.ceil(document.documentElement.scrollHeight)),

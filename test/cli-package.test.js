@@ -55,6 +55,7 @@ function testCliHelpAndVersion() {
   assert.match(help.stdout, /preview \[file\|-\]/)
   assert.match(help.stdout, /export \[file\|-\]/)
   assert.match(help.stdout, /browse \[dir\]/)
+  assert.match(help.stdout, /studio/)
 
   const version = runNode([binPath, '--version'])
   assert.strictEqual(version.status, 0, version.stderr)
@@ -112,6 +113,7 @@ function testBuildCliPackageCopiesAssets() {
     ensureFile(path.join(distDir, 'web', 'index.html'), '<html>index</html>')
     ensureFile(path.join(distDir, 'web', '404.html'), '<html>missing</html>')
     ensureFile(path.join(distDir, 'static', 'page.css'), 'body {}')
+    ensureFile(path.join(tempRoot, 'studio', 'dist', 'index.html'), '<html>studio</html>')
     ensureFile(path.join(packageRoot, 'assets', 'web', 'old.html'), 'old')
     ensureFile(path.join(packageRoot, 'assets', 'static', 'old.css'), 'old')
 
@@ -126,6 +128,10 @@ function testBuildCliPackageCopiesAssets() {
       'body {}'
     )
     assert.strictEqual(fs.existsSync(path.join(packageRoot, 'assets', 'web', 'old.html')), false)
+    assert.strictEqual(
+      fs.readFileSync(path.join(packageRoot, 'assets', 'studio', 'index.html'), 'utf8'),
+      '<html>studio</html>'
+    )
     assert.strictEqual(fs.existsSync(path.join(packageRoot, 'assets', 'static', 'old.css')), false)
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true })

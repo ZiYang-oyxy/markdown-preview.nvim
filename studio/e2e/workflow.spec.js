@@ -81,3 +81,18 @@ test('theme, TOC, and cross-tab storage notification are wired', async ({ page }
   })
   await expect(page.getByRole('status')).toContainText('其他标签页')
 })
+
+test('a slower stale render cannot replace the newest document', async ({ page }) => {
+  const diagrams = Array.from(
+    { length: 20 },
+    (_, index) => `\`\`\`mermaid\ngraph TD\n  A${index} --> B${index}\n\`\`\``,
+  ).join('\n\n')
+  await pasteDocument(page, `# 旧文档\n\n${diagrams}`)
+  await pasteDocument(page, '# 最新文档\n\n只应显示这一份。')
+
+  const preview = page.frameLocator('.preview-frame')
+  await expect(preview.getByRole('heading', { name: '最新文档' })).toBeVisible()
+  await page.waitForTimeout(1_000)
+  await expect(preview.getByRole('heading', { name: '最新文档' })).toBeVisible()
+  await expect(preview.getByRole('heading', { name: '旧文档' })).toHaveCount(0)
+})
