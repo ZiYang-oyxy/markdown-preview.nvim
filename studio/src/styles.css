@@ -19,6 +19,14 @@
   --shadow: 0 22px 60px rgb(30 51 84 / 9%);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -45,6 +53,13 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgb(23 105 232 / 14%);
+}
+
+h1,
+h2 {
+  text-wrap: balance;
 }
 
 button:focus-visible,
@@ -57,6 +72,22 @@ a:focus-visible {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.42;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 10px;
+  left: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: white;
+  background: var(--blue);
+  transform: translateY(-160%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 .studio-shell {
@@ -411,7 +442,7 @@ button:disabled {
 }
 
 .compact-button {
-  min-height: 36px;
+  min-height: 40px;
   padding-inline: 12px;
   font-size: 12px;
 }
@@ -580,6 +611,7 @@ button:disabled {
   border: 0;
   color: var(--ink);
   background: transparent;
+  overscroll-behavior: contain;
 }
 
 .modal::backdrop,
@@ -649,7 +681,7 @@ button:disabled {
   min-height: min(62vh, 620px);
 }
 
-.modal textarea:focus {
+.modal textarea:focus-visible {
   border-color: var(--blue);
   box-shadow: 0 0 0 3px rgb(23 105 232 / 12%);
 }
@@ -691,6 +723,12 @@ button:disabled {
 .sheet-content {
   max-height: calc(76dvh - 90px);
   overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheet-delete {
+  width: 100%;
+  margin-top: 16px;
 }
 
 @media (max-width: 1179px) {
@@ -701,6 +739,10 @@ button:disabled {
   .document-rail,
   .toc-rail {
     display: none;
+  }
+
+  .mobile-header-actions {
+    display: flex;
   }
 }
 

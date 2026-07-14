@@ -71,8 +71,10 @@ export default function PasteDialog({ onClose, onCreate, onImport, open }) {
         <label className="textarea-label" htmlFor="paste-markdown">Markdown 源文本</label>
         <textarea
           id="paste-markdown"
+          autoComplete="off"
+          name="markdown-source"
           onChange={(event) => setMarkdown(event.target.value)}
-          placeholder={'# 粘贴你的 Markdown\n\n```mermaid\ngraph TD\n  A --> B\n```'}
+          placeholder={'# 粘贴你的 Markdown…\n\n```mermaid\ngraph TD\n  A --> B\n```'}
           ref={textareaRef}
           spellCheck="false"
           value={markdown}

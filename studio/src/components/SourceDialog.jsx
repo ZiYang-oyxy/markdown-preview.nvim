@@ -61,6 +61,8 @@ export default function SourceDialog({ document, onClose, onSave, open }) {
         <label className="textarea-label" htmlFor="source-markdown">Markdown 源文本</label>
         <textarea
           id="source-markdown"
+          autoComplete="off"
+          name="markdown-source"
           onChange={(event) => change(event.target.value)}
           spellCheck="false"
           value={draft}

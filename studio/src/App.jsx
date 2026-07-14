@@ -79,6 +79,14 @@ export default function App() {
 
   useEffect(() => subscribeToStorage(() => refresh(true)), [refresh])
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    document.querySelector('#theme-color')?.setAttribute(
+      'content',
+      theme === 'dark' ? '#11151d' : '#f6f8fb',
+    )
+  }, [theme])
+
   const handlePreviewError = useCallback((message) => setAlert(message), [])
   const handleToc = useCallback((items) => setToc(items), [])
 
@@ -113,10 +121,15 @@ export default function App() {
   }
 
   function removeDocument() {
-    if (!window.confirm(`确认删除“${workspace.document.title}”？此操作无法撤销。`)) return
+    if (!window.confirm(`确认删除“${workspace.document.title}”？此操作无法撤销。`)) return false
     deleteDocument(workspace.document.id)
     setToc([])
     refresh()
+    return true
+  }
+
+  function removeDocumentFromSheet() {
+    if (removeDocument()) setDocumentsOpen(false)
   }
 
   async function importFile(event) {
@@ -162,6 +175,7 @@ export default function App() {
 
   return (
     <div className="studio-shell" data-theme={theme}>
+      <a className="skip-link" href="#main-content">跳到正文</a>
       <AppHeader
         hasDocument={Boolean(active)}
         onCreate={() => setPasteOpen(true)}
@@ -179,7 +193,7 @@ export default function App() {
           onSelect={selectDocument}
         />
 
-        <main className="reading-workspace">
+        <main className="reading-workspace" id="main-content" tabIndex="-1">
           {alert ? <div className="app-alert" role="alert">{alert}<button onClick={() => setAlert('')} type="button" aria-label="关闭提示">×</button></div> : null}
           {status ? <div className="sync-status" role="status">{status}</div> : null}
           {active ? (
@@ -211,7 +225,10 @@ export default function App() {
       <button className="mobile-create" onClick={() => setPasteOpen(true)} type="button" aria-label="新建文档">＋</button>
       <input
         accept=".md,.markdown,text/markdown,text/plain"
+        aria-label="导入 Markdown 文件"
+        autoComplete="off"
         className="visually-hidden"
+        name="markdown-file"
         onChange={importFile}
         ref={fileInputRef}
         type="file"
@@ -236,6 +253,11 @@ export default function App() {
           documents={workspace.index.documents}
           onSelect={selectDocument}
         />
+        {active ? (
+          <button className="danger-button sheet-delete" onClick={removeDocumentFromSheet} type="button">
+            删除当前文档
+          </button>
+        ) : null}
       </Sheet>
       <Sheet label="本文目录" onClose={() => setTocOpen(false)} open={tocOpen}>
         <TocList onSelect={scrollToHeading} toc={toc} />
