@@ -1,4 +1,6 @@
-# Markdown Studio Implementation Plan
+# Markdown Studio Implementation Plan（已被安全静态版计划取代）
+
+> 后继计划：`2026-07-15-markdown-studio-secure-static.md`。本文件保留用于记录原始设计演进，不再执行。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

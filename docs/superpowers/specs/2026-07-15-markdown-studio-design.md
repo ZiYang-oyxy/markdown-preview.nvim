@@ -1,7 +1,8 @@
 # Markdown Studio 临时 Markdown 工作台设计
 
 - **日期**：2026-07-15
-- **状态**：已确认，待实现
+- **状态**：已被安全静态版规格取代
+- **后继规格**：`2026-07-15-markdown-studio-secure-static-design.md`
 - **定位**：从 Browser 中独立出来的粘贴式 Markdown 阅读工具
 
 ## 1. 目标
