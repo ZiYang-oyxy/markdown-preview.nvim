@@ -95,6 +95,7 @@ graph TD
 
   expect(await frame.evaluate(() => window.__studioXss)).toBeUndefined()
   await expect(frame.locator('svg')).toHaveCount(1)
+  await expect(frame.locator('svg')).toContainText('Safe')
   await expect(frame.locator('foreignObject')).toHaveCount(0)
   await expect(frame.locator('[role="alert"]')).toContainText('无法渲染')
 })

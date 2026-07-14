@@ -1,0 +1,223 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+import AppHeader from './components/AppHeader.jsx'
+import DocumentRail, { DocumentList } from './components/DocumentRail.jsx'
+import DocumentToolbar from './components/DocumentToolbar.jsx'
+import PasteDialog from './components/PasteDialog.jsx'
+import PreviewPane from './components/PreviewPane.jsx'
+import Sheet from './components/Sheet.jsx'
+import SourceDialog from './components/SourceDialog.jsx'
+import TocRail, { TocList } from './components/TocRail.jsx'
+import {
+  PREFERENCES_KEY,
+  createDocument,
+  deleteDocument,
+  loadDocument,
+  loadIndex,
+  setActiveDocument,
+  subscribeToStorage,
+  updateDocument,
+} from './storage.js'
+
+function loadTheme() {
+  try {
+    const preferences = JSON.parse(localStorage.getItem(PREFERENCES_KEY))
+    return preferences?.theme === 'dark' ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
+function loadWorkspace() {
+  const index = loadIndex()
+  const stored = loadDocument(index.activeDocumentId)
+  const metadata = index.documents.find(({ id }) => id === index.activeDocumentId)
+  return {
+    index,
+    document: stored && metadata ? { ...stored, ...metadata } : null,
+  }
+}
+
+function EmptyState({ onCreate, onImport }) {
+  return (
+    <section className="empty-state" aria-labelledby="empty-title">
+      <span className="empty-symbol" aria-hidden="true">M↓</span>
+      <p className="eyebrow">Paste · Read · Keep local</p>
+      <h1 id="empty-title">把 Markdown 变成舒适的阅读页面</h1>
+      <p>
+        粘贴 AI 输出或导入 <code>.md</code> 文件；Markdown、代码块、公式和 Mermaid 图
+        都会在隔离环境中渲染。
+      </p>
+      <div className="empty-actions">
+        <button className="primary-button" onClick={onCreate} type="button">粘贴新文档</button>
+        <button className="secondary-button" onClick={onImport} type="button">导入 .md</button>
+      </div>
+      <small><span aria-hidden="true">●</span> 内容只保存在当前浏览器，不会上传</small>
+    </section>
+  )
+}
+
+export default function App() {
+  const [workspace, setWorkspace] = useState(loadWorkspace)
+  const [theme, setTheme] = useState(loadTheme)
+  const [toc, setToc] = useState([])
+  const [pasteOpen, setPasteOpen] = useState(false)
+  const [sourceOpen, setSourceOpen] = useState(false)
+  const [documentsOpen, setDocumentsOpen] = useState(false)
+  const [tocOpen, setTocOpen] = useState(false)
+  const [alert, setAlert] = useState('')
+  const [status, setStatus] = useState('')
+  const fileInputRef = useRef(null)
+  const previewChannelRef = useRef(null)
+
+  const refresh = useCallback((notify = false) => {
+    setWorkspace(loadWorkspace())
+    if (notify) setStatus('已同步其他标签页的更改')
+  }, [])
+
+  useEffect(() => subscribeToStorage(() => refresh(true)), [refresh])
+
+  const handlePreviewError = useCallback((message) => setAlert(message), [])
+  const handleToc = useCallback((items) => setToc(items), [])
+
+  function create(markdown) {
+    try {
+      createDocument(markdown)
+      setAlert('')
+      setToc([])
+      refresh()
+      return true
+    } catch (error) {
+      setAlert(error.message)
+      return false
+    }
+  }
+
+  function selectDocument(id) {
+    setActiveDocument(id)
+    setDocumentsOpen(false)
+    setToc([])
+    refresh()
+  }
+
+  function saveSource(markdown) {
+    try {
+      updateDocument(workspace.document.id, markdown)
+      setAlert('')
+      refresh()
+    } catch (error) {
+      setAlert(error.message)
+    }
+  }
+
+  function removeDocument() {
+    if (!window.confirm(`确认删除“${workspace.document.title}”？此操作无法撤销。`)) return
+    deleteDocument(workspace.document.id)
+    setToc([])
+    refresh()
+  }
+
+  async function importFile(event) {
+    const [file] = event.target.files
+    event.target.value = ''
+    if (!file) return
+    try {
+      if (file.size > 1024 * 1024) throw new Error('单份文档不能超过 1 MiB。')
+      const markdown = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer())
+      create(markdown)
+      setPasteOpen(false)
+    } catch (error) {
+      setAlert(error instanceof TypeError ? '文件不是有效的 UTF-8 文本。' : error.message)
+    }
+  }
+
+  function toggleTheme() {
+    const next = theme === 'light' ? 'dark' : 'light'
+    setTheme(next)
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ version: 1, theme: next }))
+  }
+
+  function scrollToHeading(id) {
+    previewChannelRef.current?.scrollTo?.(id)
+    setTocOpen(false)
+  }
+
+  const active = workspace.document
+
+  return (
+    <div className="studio-shell" data-theme={theme}>
+      <AppHeader
+        hasDocument={Boolean(active)}
+        onCreate={() => setPasteOpen(true)}
+        onOpenDocuments={() => setDocumentsOpen(true)}
+        onOpenToc={() => setTocOpen(true)}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
+
+      <div className="workspace">
+        <DocumentRail
+          activeId={workspace.index.activeDocumentId}
+          documents={workspace.index.documents}
+          onCreate={() => setPasteOpen(true)}
+          onSelect={selectDocument}
+        />
+
+        <main className="reading-workspace">
+          {alert ? <div className="app-alert" role="alert">{alert}<button onClick={() => setAlert('')} type="button" aria-label="关闭提示">×</button></div> : null}
+          {status ? <div className="sync-status" role="status">{status}</div> : null}
+          {active ? (
+            <>
+              <DocumentToolbar document={active} onDelete={removeDocument} onSource={() => setSourceOpen(true)} />
+              <PreviewPane
+                key={active.id}
+                markdown={active.markdown}
+                onError={handlePreviewError}
+                onToc={handleToc}
+                ref={previewChannelRef}
+                theme={theme}
+              />
+            </>
+          ) : (
+            <EmptyState onCreate={() => setPasteOpen(true)} onImport={() => fileInputRef.current?.click()} />
+          )}
+        </main>
+
+        <TocRail onSelect={scrollToHeading} toc={toc} />
+      </div>
+
+      <button className="mobile-create" onClick={() => setPasteOpen(true)} type="button" aria-label="新建文档">＋</button>
+      <input
+        accept=".md,.markdown,text/markdown,text/plain"
+        className="visually-hidden"
+        onChange={importFile}
+        ref={fileInputRef}
+        type="file"
+      />
+
+      <PasteDialog
+        onClose={() => setPasteOpen(false)}
+        onCreate={create}
+        onImport={() => fileInputRef.current?.click()}
+        open={pasteOpen}
+      />
+      <SourceDialog
+        document={active}
+        onClose={() => setSourceOpen(false)}
+        onSave={saveSource}
+        open={sourceOpen}
+      />
+
+      <Sheet label="临时文档" onClose={() => setDocumentsOpen(false)} open={documentsOpen}>
+        <DocumentList
+          activeId={workspace.index.activeDocumentId}
+          documents={workspace.index.documents}
+          onSelect={selectDocument}
+        />
+      </Sheet>
+      <Sheet label="本文目录" onClose={() => setTocOpen(false)} open={tocOpen}>
+        <TocList onSelect={scrollToHeading} toc={toc} />
+      </Sheet>
+    </div>
+  )
+}

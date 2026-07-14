@@ -169,6 +169,9 @@ function createMarkdown() {
 }
 
 function styleValueIsSafe(value) {
+  if (/@import|@namespace|javascript:|data:|expression\s*\(|behavior\s*:|-moz-binding/i.test(value)) {
+    return false
+  }
   const urls = value.match(/url\(([^)]+)\)/gi) ?? []
   return urls.every((entry) => /^url\(["']?#[a-z0-9_.:-]+["']?\)$/i.test(entry.replace(/\s/g, '')))
 }
@@ -198,17 +201,44 @@ function sanitizeHtml(windowRef, unsafeHtml) {
 }
 
 function sanitizeSvg(windowRef, unsafeSvg) {
+  const sourceTemplate = windowRef.document.createElement('template')
+  sourceTemplate.innerHTML = unsafeSvg
+  for (const foreignObject of sourceTemplate.content.querySelectorAll('foreignObject')) {
+    const label = foreignObject.textContent.trim()
+    if (!label) {
+      foreignObject.remove()
+      continue
+    }
+    const width = Math.min(10_000, Math.max(0, Number.parseFloat(foreignObject.getAttribute('width')) || 0))
+    const height = Math.min(10_000, Math.max(0, Number.parseFloat(foreignObject.getAttribute('height')) || 0))
+    const text = windowRef.document.createElementNS('http://www.w3.org/2000/svg', 'text')
+    text.setAttribute('class', 'safe-mermaid-label')
+    text.setAttribute('x', String(width / 2))
+    text.setAttribute('y', String(height / 2))
+    text.setAttribute('text-anchor', 'middle')
+    text.setAttribute('dominant-baseline', 'middle')
+    text.textContent = label.slice(0, 2_000)
+    foreignObject.replaceWith(text)
+  }
+
   const purifier = createDOMPurify(windowRef)
   installAttributePolicy(purifier, { svg: true })
-  return purifier.sanitize(unsafeSvg, {
+  const cleanSvg = purifier.sanitize(sourceTemplate.innerHTML, {
     USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_TAGS: ['style'],
     FORBID_TAGS: [
       'a', 'animate', 'discard', 'foreignObject', 'iframe', 'image', 'object',
-      'script', 'set', 'style', 'use',
+      'script', 'set', 'use',
     ],
     FORBID_ATTR: ['onbegin', 'onend', 'onrepeat'],
     ALLOW_DATA_ATTR: false,
   })
+  const template = windowRef.document.createElement('template')
+  template.innerHTML = cleanSvg
+  for (const style of template.content.querySelectorAll('style')) {
+    if (!styleValueIsSafe(style.textContent)) return ''
+  }
+  return template.innerHTML
 }
 
 function initializeMermaid() {
@@ -216,6 +246,7 @@ function initializeMermaid() {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
+    htmlLabels: false,
     suppressErrorRendering: true,
     maxTextSize: MAX_MERMAID_SOURCE_BYTES,
     maxEdges: 500,

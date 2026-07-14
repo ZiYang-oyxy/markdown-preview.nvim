@@ -188,10 +188,6 @@ export function createPreviewChannel(iframe, handlers = {}) {
     closePort()
     token = createToken()
     renderId = 0
-    ready = new Promise((resolve, reject) => {
-      readyResolve = resolve
-      readyReject = reject
-    })
     const channel = new MessageChannel()
     port = channel.port1
     port.onmessage = ({ data }) => {
