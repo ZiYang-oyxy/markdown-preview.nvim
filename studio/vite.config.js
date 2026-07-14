@@ -8,4 +8,7 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
   },
+  test: {
+    include: ['src/**/*.test.js'],
+  },
 })
