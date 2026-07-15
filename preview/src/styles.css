@@ -239,11 +239,11 @@ button:disabled {
 }
 
 .workspace[data-rail-documents="collapsed"] {
-  --rail-documents-width: 40px;
+  --rail-documents-width: 0px;
 }
 
 .workspace[data-rail-toc="collapsed"] {
-  --rail-toc-width: 40px;
+  --rail-toc-width: 0px;
 }
 
 .document-rail,
@@ -270,35 +270,40 @@ button:disabled {
 
 .document-rail[data-collapsed="true"],
 .toc-rail[data-collapsed="true"] {
-  padding: 30px 0;
-  overflow: visible;
-  align-items: center;
+  padding: 0;
+  overflow: hidden;
+  border-color: transparent;
+  background: transparent;
 }
 
-.rail-collapse-toggle {
-  position: absolute;
-  top: 30px;
-  width: 24px;
-  height: 24px;
+.rail-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.rail-collapse-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: 9px;
   color: var(--muted);
-  background: var(--paper);
-  font-size: 13px;
+  background: transparent;
+  font-size: 18px;
   line-height: 1;
 }
 
-.document-rail .rail-collapse-toggle {
-  right: 14px;
+.rail-collapse-button:hover {
+  border-color: color-mix(in srgb, var(--blue) 28%, var(--rule));
+  color: var(--blue);
+  background: var(--blue-soft);
 }
 
-.toc-rail .rail-collapse-toggle {
-  left: 14px;
-}
-
-.document-rail[data-collapsed="true"] .rail-collapse-toggle,
-.toc-rail[data-collapsed="true"] .rail-collapse-toggle {
-  position: static;
+.rail-heading--toc {
+  align-items: flex-start;
 }
 
 .rail-heading {
@@ -409,6 +414,67 @@ button:disabled {
   position: relative;
   min-width: 0;
   padding: 26px clamp(20px, 4vw, 58px) 48px;
+}
+
+.rail-restore-handle {
+  position: absolute;
+  z-index: 12;
+  top: 34px;
+  display: flex;
+  width: 42px;
+  min-height: 92px;
+  padding: 11px 8px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  background: color-mix(in srgb, var(--paper) 96%, var(--blue-soft));
+  box-shadow: 0 8px 22px rgb(30 51 84 / 10%);
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  writing-mode: vertical-rl;
+  transition:
+    color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.rail-restore-handle:hover {
+  color: var(--blue);
+  background: var(--paper);
+  box-shadow: 0 10px 28px rgb(23 105 232 / 15%);
+}
+
+.rail-restore-handle--documents {
+  left: 0;
+  border-left: 0;
+  border-radius: 0 9px 9px 0;
+  transform: translateX(-1px);
+}
+
+.rail-restore-handle--documents:hover {
+  transform: translateX(3px);
+}
+
+.rail-restore-handle--toc {
+  right: 0;
+  border-right: 0;
+  border-radius: 9px 0 0 9px;
+  transform: translateX(1px);
+}
+
+.rail-restore-handle--toc:hover {
+  transform: translateX(-3px);
+}
+
+.rail-restore-icon {
+  color: var(--blue);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 15px;
+  letter-spacing: 0;
 }
 
 .empty-state {
@@ -808,7 +874,8 @@ button:disabled {
   }
 
   .document-rail,
-  .toc-rail {
+  .toc-rail,
+  .rail-restore-handle {
     display: none;
   }
 
@@ -948,6 +1015,11 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .workspace,
+  .rail-restore-handle {
+    transition: none !important;
+  }
+
   *,
   *::before,
   *::after {

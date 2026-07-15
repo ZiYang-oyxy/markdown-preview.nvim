@@ -234,6 +234,30 @@ export default function App() {
         />
 
         <main className="reading-workspace" id="main-content" tabIndex="-1">
+          {railsCollapsed.documents ? (
+            <button
+              aria-expanded="false"
+              aria-label="展开临时文档栏"
+              className="rail-restore-handle rail-restore-handle--documents"
+              onClick={() => toggleRail('documents')}
+              type="button"
+            >
+              <span className="rail-restore-icon" aria-hidden="true">▤</span>
+              <span>文档</span>
+            </button>
+          ) : null}
+          {railsCollapsed.toc ? (
+            <button
+              aria-expanded="false"
+              aria-label="展开本文目录栏"
+              className="rail-restore-handle rail-restore-handle--toc"
+              onClick={() => toggleRail('toc')}
+              type="button"
+            >
+              <span className="rail-restore-icon" aria-hidden="true">≡</span>
+              <span>目录</span>
+            </button>
+          ) : null}
           {alert ? <div className="app-alert" role="alert">{alert}<button onClick={() => setAlert('')} type="button" aria-label="关闭提示">×</button></div> : null}
           {status ? <div className="sync-status" role="status">{status}</div> : null}
           {active ? (

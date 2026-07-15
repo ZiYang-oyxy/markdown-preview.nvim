@@ -21,18 +21,23 @@ export function TocList({ onSelect, toc }) {
 export default function TocRail({ collapsed, onSelect, onToggleCollapse, toc }) {
   return (
     <aside className="toc-rail" aria-label="本文目录" data-collapsed={collapsed ? 'true' : undefined}>
-      <button
-        aria-expanded={!collapsed}
-        aria-label={collapsed ? '展开本文目录栏' : '收起本文目录栏'}
-        className="rail-collapse-toggle"
-        onClick={onToggleCollapse}
-        type="button"
-      >
-        {collapsed ? '‹' : '›'}
-      </button>
       {collapsed ? null : (
         <>
-          <p className="eyebrow">本文目录</p>
+          <div className="rail-heading rail-heading--toc">
+            <div>
+              <p className="eyebrow">文档导航</p>
+              <h2>本文目录</h2>
+            </div>
+            <button
+              aria-expanded="true"
+              aria-label="收起本文目录栏"
+              className="rail-collapse-button"
+              onClick={onToggleCollapse}
+              type="button"
+            >
+              <span aria-hidden="true">›</span>
+            </button>
+          </div>
           <TocList onSelect={onSelect} toc={toc} />
         </>
       )}
