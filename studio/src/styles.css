@@ -132,14 +132,11 @@ button:disabled {
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   width: 34px;
   height: 34px;
-  place-items: center;
   border-radius: 10px;
-  color: white;
-  background: var(--blue);
-  box-shadow: 0 7px 18px rgb(23 105 232 / 24%);
+  object-fit: cover;
 }
 
 .header-actions,

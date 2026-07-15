@@ -14,6 +14,16 @@ test.beforeEach(async ({ page }) => {
   await page.reload()
 })
 
+test('uses the Markdown icon in the header and browser tab', async ({ page }) => {
+  await expect(page.locator('link[rel="icon"][sizes="32x32"]')).toHaveAttribute('href', './favicon-32.png')
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', './apple-touch-icon.png')
+
+  const brandIcon = page.getByRole('img', { name: 'Markdown Studio' })
+  await expect(brandIcon).toHaveAttribute('src', './icon-192.png')
+  await expect(brandIcon).toBeVisible()
+  expect(await brandIcon.evaluate((image) => image.naturalWidth)).toBeGreaterThan(0)
+})
+
 test('paste creates separate local documents and reload restores the active one', async ({ page }) => {
   const documentRail = page.getByRole('complementary', { name: '临时文档' })
   await expect(page.getByRole('heading', { name: '把 Markdown 变成舒适的阅读页面' })).toBeVisible()

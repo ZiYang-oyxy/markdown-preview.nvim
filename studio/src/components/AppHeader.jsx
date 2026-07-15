@@ -54,7 +54,13 @@ export default function AppHeader({
       </div>
 
       <a className="brand" href="./" aria-label="Markdown Studio 首页">
-        <span className="brand-mark" aria-hidden="true">M</span>
+        <img
+          alt="Markdown Studio"
+          className="brand-mark"
+          height="34"
+          src="./icon-192.png"
+          width="34"
+        />
         <span className="brand-name">Markdown Studio</span>
       </a>
 
