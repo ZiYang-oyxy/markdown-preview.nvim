@@ -1,10 +1,12 @@
-# Markdown Studio Secure Static Implementation Plan
+# Markdown Preview Secure Static Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a paste-first Markdown Studio that is safe to publish as a static site and runs locally through a minimal loopback-only static server.
+> **Naming update:** The shipped user-facing name is **Markdown Preview** and its primary CLI entry is `mkdp paste`. The old `mkdp studio` command remains a hidden compatibility alias; historical internal `studio` paths, storage keys, and protocol identifiers remain unchanged.
 
-**Architecture:** Create an independent React/Vite application under `studio/`. The top-level shell owns UI and constrained `localStorage`; an opaque sandbox iframe renders untrusted Markdown through a private `MessageChannel` using a strict allowlisted renderer. Public deployment serves `studio/dist/` only, while `mkdp studio` serves the same files on a fixed loopback origin without exposing the legacy Preview/Browser server.
+**Goal:** Build a paste-first Markdown Preview that is safe to publish as a static site and runs locally through a minimal loopback-only static server.
+
+**Architecture:** Create an independent React/Vite application under `studio/`. The top-level shell owns UI and constrained `localStorage`; an opaque sandbox iframe renders untrusted Markdown through a private `MessageChannel` using a strict allowlisted renderer. Public deployment serves `studio/dist/` only, while `mkdp paste` serves the same files on a fixed loopback origin without exposing the legacy Preview/Browser server.
 
 **Tech Stack:** React 19.2.7, Vite 8.1.3, markdown-it 14.3.0, Mermaid 11.16.0, KaTeX 0.17.0, DOMPurify 3.4.11, highlight.js 11.11.1, Vitest 4.1.x, Playwright.
 
@@ -23,7 +25,7 @@
 
 ---
 
-### Task 1: Scaffold isolated static Studio and constrained storage
+### Task 1: Scaffold isolated static Markdown Preview and constrained storage
 
 **Files:**
 - Create: `studio/package.json`
@@ -273,11 +275,11 @@ Test default port `17329`, explicit port, loopback bind, Host rejection, capabil
 
 - [ ] **Step 4: Implement minimal static server and commands**
 
-The server may only read files under the configured `studio/dist` realpath. It adds CSP, `nosniff`, referrer and permissions headers. `scripts/mkdp-studio.js` and packaged `mkdp studio` open the capability URL. Port conflicts fail with a clear message and never select a random port.
+The server may only read files under the configured `studio/dist` realpath. It adds CSP, `nosniff`, referrer and permissions headers. `scripts/mkdp-studio.js` and packaged `mkdp paste` open the capability URL. Port conflicts fail with a clear message and never select a random port.
 
 - [ ] **Step 5: Package static assets**
 
-Extend `scripts/mkdp-build-cli-package.js` to copy `studio/dist` to `packages/cli/assets/studio` and verify both HTML entries exist. Do not copy or expose legacy Preview server code as part of the Studio command path.
+Extend `scripts/mkdp-build-cli-package.js` to copy `studio/dist` to `packages/cli/assets/studio` and verify both HTML entries exist. Do not copy or expose legacy Preview server code as part of the Markdown Preview command path.
 
 - [ ] **Step 6: Verify GREEN**
 

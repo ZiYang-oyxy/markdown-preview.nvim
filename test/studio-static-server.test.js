@@ -25,7 +25,7 @@ function request(url, options = {}) {
 async function main() {
   const assetRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mkdp-studio-static-'))
   fs.mkdirSync(path.join(assetRoot, 'assets'))
-  fs.writeFileSync(path.join(assetRoot, 'index.html'), '<h1>Studio shell</h1>')
+  fs.writeFileSync(path.join(assetRoot, 'index.html'), '<h1>Markdown Preview shell</h1>')
   fs.writeFileSync(path.join(assetRoot, 'studio-preview.html'), '<h1>Preview</h1>')
   fs.writeFileSync(path.join(assetRoot, 'assets', 'app.js'), 'console.log("safe")')
   let session
@@ -36,7 +36,7 @@ async function main() {
 
     const index = await request(session.url)
     assert.strictEqual(index.statusCode, 200)
-    assert.match(index.body, /Studio shell/)
+    assert.match(index.body, /Markdown Preview shell/)
     assert.strictEqual(index.headers['x-content-type-options'], 'nosniff')
     assert.strictEqual(index.headers['referrer-policy'], 'no-referrer')
     assert.match(index.headers['content-security-policy'], /frame-src 'self'/)

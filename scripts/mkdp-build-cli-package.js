@@ -55,7 +55,7 @@ function syncCliPackageAssets(options = {}) {
 
   requireDirectory(sourceWebDir, 'dist web assets')
   requireDirectory(sourceStaticDir, 'dist static assets')
-  requireDirectory(sourceStudioDir, 'Studio dist assets')
+  requireDirectory(sourceStudioDir, 'Markdown Preview dist assets')
 
   ensureEmptyDir(targetWebDir)
   ensureEmptyDir(targetStaticDir)

@@ -9,7 +9,7 @@ import {
 
 const token = '0123456789abcdef0123456789abcdef'
 
-describe('Studio preview protocol validation', () => {
+describe('Markdown Preview protocol validation', () => {
   it('accepts only an exact versioned initialization message', () => {
     expect(
       validateInitMessage({ type: 'mkdp:studio-init', version: 1, token }),

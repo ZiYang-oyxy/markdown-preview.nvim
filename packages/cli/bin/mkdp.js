@@ -10,7 +10,7 @@ function usage() {
     '  preview [file|-]   Preview a Markdown file in the browser',
     '  export [file|-]    Export Markdown to a standalone HTML file',
     '  browse [dir]       Browse Markdown files in a directory',
-    '  studio             Open the independent paste-first Markdown Studio',
+    '  paste              Open the independent paste-first Markdown Preview',
     '',
     'Options:',
     '  -h, --help         Show help',
@@ -55,7 +55,13 @@ async function main(argv) {
     return 0
   }
 
+  if (command === 'paste') {
+    await require('../lib/commands/studio').run(argv.slice(3))
+    return 0
+  }
+
   if (command === 'studio') {
+    process.stderr.write('`mkdp studio` has been renamed to `mkdp paste`; please update your command.\n')
     await require('../lib/commands/studio').run(argv.slice(3))
     return 0
   }

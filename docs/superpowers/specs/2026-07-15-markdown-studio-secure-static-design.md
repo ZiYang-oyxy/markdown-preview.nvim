@@ -1,16 +1,18 @@
-# Markdown Studio 安全静态版设计
+# Markdown Preview 安全静态版设计
 
 - **日期**：2026-07-15
 - **状态**：已确认，待实现
 - **取代**：`2026-07-15-markdown-studio-design.md`
 
+> **命名说明（2026-07-15）**：用户可见产品名改为 **Markdown Preview**，主 CLI 入口改为 `mkdp paste`。`mkdp studio` 暂时作为隐藏兼容别名；内部 `studio` 路径、`mkdp-studio:*` 存储 key 与 `mkdp:studio-init` 协议名暂不迁移。
+
 ## 1. 目标与威胁模型
 
-Markdown Studio 是一个粘贴优先的临时 Markdown 阅读工作台。用户每次粘贴默认创建一份新文档，文档只保存在访问者浏览器中，默认界面展示渲染结果，源码编辑按需打开。
+Markdown Preview 是一个粘贴优先的临时 Markdown 阅读工作台。用户每次粘贴默认创建一份新文档，文档只保存在访问者浏览器中，默认界面展示渲染结果，源码编辑按需打开。
 
 产品必须同时适用于：
 
-- 本地 `mkdp studio`。
+- 本地 `mkdp paste`。
 - HTTPS 内网静态站。
 - HTTPS 公网静态站或 CDN。
 
@@ -20,7 +22,7 @@ Markdown Studio 是一个粘贴优先的临时 Markdown 阅读工作台。用户
 
 ```mermaid
 flowchart TD
-    subgraph Shell["顶层 Studio Shell"]
+    subgraph Shell["顶层 Markdown Preview Shell"]
         Paste(["粘贴 / 导入"]):::primary
         Storage[("localStorage")]:::warning
         Reader["阅读工作台"]:::grey
@@ -48,7 +50,7 @@ flowchart TD
     classDef grey fill:#B0B5BD,stroke:#9FA4AC,color:#fff
 ```
 
-Studio 是独立静态应用，不运行现有 Preview Server、Socket.IO、Browse API、本地图片路由或导出 proxy。顶层 Shell 管理 UI 与 `localStorage`；不可信 Markdown 只在没有 `allow-same-origin` 的 sandbox iframe 中渲染。
+Markdown Preview 是独立静态应用，不运行现有 Preview Server、Socket.IO、Browse API、本地图片路由或导出 proxy。顶层 Shell 管理 UI 与 `localStorage`；不可信 Markdown 只在没有 `allow-same-origin` 的 sandbox iframe 中渲染。
 
 iframe 固定为：
 
@@ -71,13 +73,13 @@ iframe 固定为：
 
 ### 3.2 本地 CLI
 
-`mkdp studio` 使用最小静态文件服务器提供相同的 `studio/dist/`：
+`mkdp paste` 使用最小静态文件服务器提供相同的 `studio/dist/`：
 
 - 默认只绑定 `127.0.0.1:17329`。
 - 支持 `--port <number>`。
 - 端口占用时明确失败，不回退到随机端口。
 - 使用每次启动生成的 capability path token；token 改变不影响 origin，因此不影响 `localStorage`。
-- 校验 Host，只服务静态 Studio 文件。
+- 校验 Host，只服务静态 Markdown Preview 文件。
 
 现有 Browser、Preview、Scratch 保持原行为，仅作为本地工具；不得被反向代理到内网或公网。
 
@@ -103,7 +105,7 @@ iframe 固定为：
 
 ## 5. 安全渲染器
 
-Studio 新建独立的 safe preview entry，不复用旧 `PreviewPage` 的 socket 生命周期和完整插件链。
+Markdown Preview 新建独立的 safe preview entry，不复用旧 `PreviewPage` 的 socket 生命周期和完整插件链。
 
 ### 5.1 白名单能力
 
@@ -248,7 +250,7 @@ JS/CSS 外置，不在 HTML 中放大型内联脚本。静态部署不开 CORS�
 - forged message、错误 source、错误 token、旧 renderId 被忽略。
 - preview 无法访问父页面 DOM 和 `localStorage`。
 - 导出的 HTML 无脚本并通过重新打开攻击测试。
-- `/_local_image_`、`/_mkdp_export_proxy`、`/_mkdp/browse`、`/socket.io` 在静态制品和本地 Studio 服务器均为 404。
+- `/_local_image_`、`/_mkdp_export_proxy`、`/_mkdp/browse`、`/socket.io` 在静态制品和本地 Markdown Preview 服务器均为 404。
 - 超大 Markdown 和 Mermaid 被拒绝，不进入渲染。
 
 ### 视觉和无障碍
@@ -259,7 +261,7 @@ JS/CSS 外置，不在 HTML 中放大型内联脚本。静态部署不开 CORS�
 
 ## 11. 发布边界
 
-- 当前动态 Preview/Browser Server 永远不作为 Studio 的内网或公网运行时。
-- Studio 使用独立现代依赖和 lockfile；构建时执行依赖审计。
+- 当前动态 Preview/Browser Server 永远不作为 Markdown Preview 的内网或公网运行时。
+- Markdown Preview 使用独立现代依赖和 lockfile；构建时执行依赖审计。
 - 公网发布前必须升级并审计 Markdown、Mermaid、KaTeX、DOMPurify 和构建工具。
 - 若以后增加远程图片、分享、上传、同步或服务端导出，必须重新进行威胁建模和安全审查。

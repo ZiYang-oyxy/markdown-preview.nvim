@@ -1,4 +1,4 @@
-# Markdown Studio 验收报告
+# Markdown Preview 验收报告
 
 验收日期：2026-07-15
 
@@ -40,9 +40,9 @@
 | Vitest 单元测试 | 18/18 通过 |
 | JavaScript Playwright E2E | 16/16 通过 |
 | Python Playwright production 验收 | 15/15 通过 |
-| Studio production build | 通过 |
+| Markdown Preview production build | 通过 |
 | CLI package build | 通过 |
-| Studio static server | 通过 |
+| Markdown Preview static server | 通过 |
 | CLI package | 通过 |
 | 旧 Browser 回归 | 通过 |
 | 旧 Scratch route 回归 | 通过 |

@@ -4,7 +4,7 @@ const { startStudioStaticServer } = require('../studio-static-server')
 
 function printUsage() {
   process.stderr.write([
-    'Usage: mkdp studio [options]',
+    'Usage: mkdp paste [options]',
     '',
     'Options:',
     '  --port <number>    Loopback port (default: 17329)',
@@ -74,7 +74,7 @@ async function run(argv, runtimeOptions = {}) {
         process.stderr.write(`failed to open browser automatically: ${error.message || String(error)}\n`)
       }
     }
-    process.stderr.write('Studio is running on loopback only; press Ctrl+C to stop\n')
+    process.stderr.write('Markdown Preview is running on loopback only; press Ctrl+C to stop\n')
     await waitForShutdown()
   } finally {
     await session.close()

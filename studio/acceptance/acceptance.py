@@ -1,4 +1,4 @@
-"""Independent black-box acceptance suite for Markdown Studio."""
+"""Independent black-box acceptance suite for Markdown Preview."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ CONSOLE_ERRORS: list[str] = []
 
 RICH_MARKDOWN = """# AI 输出验收
 
-这是 **Markdown Studio** 的黑盒验收文档。
+这是 **Markdown Preview** 的黑盒验收文档。
 
 ## 表格与代码
 

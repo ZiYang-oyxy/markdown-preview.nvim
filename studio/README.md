@@ -1,6 +1,6 @@
-# Markdown Studio
+# Markdown Preview
 
-Markdown Studio 是一个独立的、paste-first 的静态网页：把 Markdown 源文本粘贴进去，即可阅读 Markdown、代码、KaTeX 与 Mermaid，并可导出无脚本的静态 HTML。
+Markdown Preview 是一个独立的、paste-first 的静态网页：把 Markdown 源文本粘贴进去，即可阅读 Markdown、代码、KaTeX 与 Mermaid，并可导出无脚本的静态 HTML。
 
 它不依赖旧 Browser/Preview 服务，不读取服务器文件，也没有数据 API。文档只保存在当前浏览器的 `localStorage`。
 
@@ -11,13 +11,13 @@ Markdown Studio 是一个独立的、paste-first 的静态网页：把 Markdown 
 ```bash
 npm install --prefix studio
 npm run build-studio
-npm run studio -- --no-open
+npm run paste -- --no-open
 ```
 
 默认地址使用固定 origin `http://127.0.0.1:17329`，实际入口带每次启动生成的随机路径令牌。指定端口：
 
 ```bash
-npm run studio -- --port 17330
+npm run paste -- --port 17330
 ```
 
 服务只监听 `127.0.0.1`；端口被占用时直接失败，不会悄悄改用随机端口。这样浏览器存储 origin 稳定，且不会意外暴露到局域网。
@@ -31,16 +31,16 @@ npm run build-studio
 
 只发布 `studio/dist/`。它是完整静态产物，可部署到 Nginx、Caddy、Cloudflare Pages、Netlify、GitHub Pages 或对象存储。
 
-**生产环境必须给 Studio 使用专用 origin，并部署在该 origin 的根目录。** 例如 `https://markdown.example.com/`。不要放在现有业务站点的 `/studio/` 子目录：`localStorage` 按 origin 而不是路径隔离，同源的其他应用或其 XSS 可以直接读取和修改 `mkdp-studio:*` 数据；CSP 和 iframe sandbox 无法提供路径级存储隔离。
+**生产环境必须给 Markdown Preview 使用专用 origin，并部署在该 origin 的根目录。** 例如 `https://markdown.example.com/`。不要放在现有业务站点的 `/studio/` 子目录：`localStorage` 按 origin 而不是路径隔离，同源的其他应用或其 XSS 可以直接读取和修改 `mkdp-studio:*` 数据；CSP 和 iframe sandbox 无法提供路径级存储隔离。
 
-不要把以下内容作为 Studio 的公网后端：
+不要把以下内容作为 Markdown Preview 的公网后端：
 
 - `app/server.js`
 - 旧 Browser/Preview 服务
 - `/_local_image_`、`/_mkdp_export_proxy` 或 Socket.IO 路由
 - 整个仓库目录
 
-Studio 不需要这些能力。把旧动态服务暴露到内网或公网会重新引入本地文件读取、SSRF、远程内容反射和旧渲染器 XSS 风险。
+Markdown Preview 不需要这些能力。把旧动态服务暴露到内网或公网会重新引入本地文件读取、SSRF、远程内容反射和旧渲染器 XSS 风险。
 
 产物使用相对资源路径，但这是构建兼容性，不代表子目录具有安全隔离。生产部署仍必须使用专用 origin 的根目录。平台应原样提供静态文件，不要把所有未知路径回退到 `index.html`。
 
@@ -56,7 +56,7 @@ Studio 不需要这些能力。把旧动态服务暴露到内网或公网会重�
 
 顶层页面的 CSP 允许同源脚本、样式和 sandbox iframe，但禁止网络连接。`studio-preview.html` 使用更严格的 CSP，父页面只给 iframe 开放脚本和外链弹窗能力；不能添加 `allow-same-origin`。外链仅允许通过校验的 HTTP(S) 地址，并强制 `noopener`/`noreferrer`。
 
-公网部署若需要身份认证，应由静态托管平台或反向代理完成；不要为了登录功能给 Studio 增加应用服务器或文档上传 API。反向代理也必须把 Studio 放在专用 origin，而不是与业务应用共享 origin。
+公网部署若需要身份认证，应由静态托管平台或反向代理完成；不要为了登录功能给 Markdown Preview 增加应用服务器或文档上传 API。反向代理也必须把 Markdown Preview 放在专用 origin，而不是与业务应用共享 origin。
 
 ## 数据与限制
 

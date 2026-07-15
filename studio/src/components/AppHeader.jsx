@@ -53,15 +53,15 @@ export default function AppHeader({
         </button>
       </div>
 
-      <a className="brand" href="./" aria-label="Markdown Studio 首页">
+      <a className="brand" href="./" aria-label="Markdown Preview 首页">
         <img
-          alt="Markdown Studio"
+          alt="Markdown Preview"
           className="brand-mark"
           height="34"
           src="./icon-192.png"
           width="34"
         />
-        <span className="brand-name">Markdown Studio</span>
+        <span className="brand-name">Markdown Preview</span>
       </a>
 
       <div className="header-actions" aria-label="应用操作">

@@ -21,7 +21,8 @@
     "release:github": "node ./scripts/mkdp-release-github.js",
     "build-and-browse": "node ./scripts/mkdp-build-and-browse.js",
     "browse": "node ./scripts/mkdp-browse.js",
-    "studio": "node ./scripts/mkdp-studio.js",
+    "paste": "node ./scripts/mkdp-studio.js",
+    "studio": "npm run paste --",
     "export-html": "node ./scripts/mkdp-export-html.js",
     "preview-open": "node ./scripts/mkdp-open-preview.js",
     "preview-test": "node ./scripts/mkdp-test-preview.js"

@@ -4,17 +4,17 @@
 
 `markdown-preview` 是一个 Markdown 预览与导出工具箱。
 
-## 独立 Markdown Studio
+## 独立 Markdown Preview
 
 仓库现在包含一个与旧 Browser/Preview 服务完全分离的 paste-first 静态网页。它支持多份临时文档，在 opaque sandbox 中渲染 Markdown、KaTeX、代码高亮和 Mermaid，并可导出无脚本的静态 HTML。
 
 ```bash
 npm install --prefix studio
 npm run build-studio
-npm run studio
+npm run paste
 ```
 
-部署到内网或公网时，只在**专用 origin 的根目录**发布 `studio/dist/`；不要挂在已有业务站点的子目录，也不要把旧动态服务当作 Studio 后端。安全模型、推荐响应头、存储限制和验证命令见 [`studio/README.md`](studio/README.md)。
+部署到内网或公网时，只在**专用 origin 的根目录**发布 `studio/dist/`；不要挂在已有业务站点的子目录，也不要把旧动态服务当作 Markdown Preview 后端。安全模型、推荐响应头、存储限制和验证命令见 [`studio/README.md`](studio/README.md)。
 
 它复用同一套本地运行时，并提供多种入口：
 

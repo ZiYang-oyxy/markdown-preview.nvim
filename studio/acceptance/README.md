@@ -1,4 +1,4 @@
-# Markdown Studio 验收方案
+# Markdown Preview 验收方案
 
 本目录提供一套独立于 Vitest 和项目内 JavaScript E2E 的黑盒验收。它使用原生 Python Playwright，只通过公开 UI 和浏览器 API 操作 production build，用来验证真实用户路径、响应式布局、可访问性和浏览器运行质量。
 

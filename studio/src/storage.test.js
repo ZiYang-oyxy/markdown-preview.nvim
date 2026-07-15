@@ -52,7 +52,7 @@ function createStorage(options = {}) {
   }
 }
 
-describe('Markdown Studio local storage', () => {
+describe('Markdown Preview local storage', () => {
   it('starts with a versioned empty index', () => {
     const { studio } = createStorage()
 
@@ -160,7 +160,7 @@ describe('Markdown Studio local storage', () => {
     expect(studio.loadDocument(document.id).markdown).toBe('# Before')
   })
 
-  it('subscribes only to Studio storage changes', () => {
+  it('subscribes only to Markdown Preview storage changes', () => {
     const { eventTarget, studio } = createStorage()
     const listener = vi.fn()
     const unsubscribe = studio.subscribeToStorage(listener)

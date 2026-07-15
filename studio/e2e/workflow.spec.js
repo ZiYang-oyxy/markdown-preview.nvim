@@ -15,10 +15,13 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('uses the Markdown icon in the header and browser tab', async ({ page }) => {
+  await expect(page).toHaveTitle('Markdown Preview')
+  await expect(page.getByText('Markdown Preview', { exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Markdown Preview 首页' })).toBeVisible()
   await expect(page.locator('link[rel="icon"][sizes="32x32"]')).toHaveAttribute('href', './favicon-32.png')
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', './apple-touch-icon.png')
 
-  const brandIcon = page.getByRole('img', { name: 'Markdown Studio' })
+  const brandIcon = page.getByRole('img', { name: 'Markdown Preview' })
   await expect(brandIcon).toHaveAttribute('src', './icon-192.png')
   await expect(brandIcon).toBeVisible()
   expect(await brandIcon.evaluate((image) => image.naturalWidth)).toBeGreaterThan(0)

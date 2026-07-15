@@ -80,7 +80,7 @@ function startStudioStaticServer(options = {}) {
     return Promise.reject(new Error('port must be an integer between 0 and 65535'))
   }
   if (!fs.existsSync(path.join(assetRoot, 'index.html'))) {
-    return Promise.reject(new Error(`Studio assets do not exist: ${assetRoot}`))
+    return Promise.reject(new Error(`Markdown Preview assets do not exist: ${assetRoot}`))
   }
 
   const token = crypto.randomBytes(16).toString('hex')

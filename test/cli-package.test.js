@@ -55,7 +55,21 @@ function testCliHelpAndVersion() {
   assert.match(help.stdout, /preview \[file\|-\]/)
   assert.match(help.stdout, /export \[file\|-\]/)
   assert.match(help.stdout, /browse \[dir\]/)
-  assert.match(help.stdout, /studio/)
+  assert.match(help.stdout, /paste\s+Open the independent paste-first Markdown Preview/)
+  assert.doesNotMatch(help.stdout, /studio/)
+
+  const pasteHelp = runNode([binPath, 'paste', '--help'])
+  assert.strictEqual(pasteHelp.status, 0, pasteHelp.stderr)
+  assert.match(pasteHelp.stderr, /Usage: mkdp paste \[options\]/)
+
+  const studioHelp = runNode([binPath, 'studio', '--help'])
+  assert.strictEqual(studioHelp.status, 0, studioHelp.stderr)
+  assert.match(studioHelp.stderr, /`mkdp studio` has been renamed to `mkdp paste`/)
+  assert.match(studioHelp.stderr, /Usage: mkdp paste \[options\]/)
+
+  const rootPackageJson = require(path.join(repoRoot, 'package.json'))
+  assert.strictEqual(rootPackageJson.scripts.paste, 'node ./scripts/mkdp-studio.js')
+  assert.strictEqual(rootPackageJson.scripts.studio, 'npm run paste --')
 
   const version = runNode([binPath, '--version'])
   assert.strictEqual(version.status, 0, version.stderr)
