@@ -56,13 +56,7 @@ async function main(argv) {
   }
 
   if (command === 'paste') {
-    await require('../lib/commands/studio').run(argv.slice(3))
-    return 0
-  }
-
-  if (command === 'studio') {
-    process.stderr.write('`mkdp studio` has been renamed to `mkdp paste`; please update your command.\n')
-    await require('../lib/commands/studio').run(argv.slice(3))
+    await require('../lib/commands/paste').run(argv.slice(3))
     return 0
   }
 

@@ -47,22 +47,22 @@ function syncCliPackageAssets(options = {}) {
   const packageRoot = options.packageRoot || path.join(repoRoot, 'packages', 'cli')
   const sourceWebDir = path.join(distDir, 'web')
   const sourceStaticDir = path.join(distDir, 'static')
-  const sourceStudioDir = path.join(repoRoot, 'studio', 'dist')
+  const sourcePreviewDir = path.join(repoRoot, 'preview', 'dist')
   const targetAssetDir = path.join(packageRoot, 'assets')
   const targetWebDir = path.join(targetAssetDir, 'web')
   const targetStaticDir = path.join(targetAssetDir, 'static')
-  const targetStudioDir = path.join(targetAssetDir, 'studio')
+  const targetPreviewDir = path.join(targetAssetDir, 'preview')
 
   requireDirectory(sourceWebDir, 'dist web assets')
   requireDirectory(sourceStaticDir, 'dist static assets')
-  requireDirectory(sourceStudioDir, 'Markdown Preview dist assets')
+  requireDirectory(sourcePreviewDir, 'Markdown Preview dist assets')
 
   ensureEmptyDir(targetWebDir)
   ensureEmptyDir(targetStaticDir)
-  ensureEmptyDir(targetStudioDir)
+  ensureEmptyDir(targetPreviewDir)
   copyTree(sourceWebDir, targetWebDir)
   copyTree(sourceStaticDir, targetStaticDir)
-  copyTree(sourceStudioDir, targetStudioDir)
+  copyTree(sourcePreviewDir, targetPreviewDir)
 }
 
 function main() {

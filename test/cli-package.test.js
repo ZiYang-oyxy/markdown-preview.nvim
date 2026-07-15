@@ -56,20 +56,17 @@ function testCliHelpAndVersion() {
   assert.match(help.stdout, /export \[file\|-\]/)
   assert.match(help.stdout, /browse \[dir\]/)
   assert.match(help.stdout, /paste\s+Open the independent paste-first Markdown Preview/)
-  assert.doesNotMatch(help.stdout, /studio/)
 
   const pasteHelp = runNode([binPath, 'paste', '--help'])
   assert.strictEqual(pasteHelp.status, 0, pasteHelp.stderr)
   assert.match(pasteHelp.stderr, /Usage: mkdp paste \[options\]/)
 
-  const studioHelp = runNode([binPath, 'studio', '--help'])
-  assert.strictEqual(studioHelp.status, 0, studioHelp.stderr)
-  assert.match(studioHelp.stderr, /`mkdp studio` has been renamed to `mkdp paste`/)
-  assert.match(studioHelp.stderr, /Usage: mkdp paste \[options\]/)
+  const removedLegacyCommand = runNode([binPath, ['stu', 'dio'].join(''), '--help'])
+  assert.strictEqual(removedLegacyCommand.status, 1)
+  assert.match(removedLegacyCommand.stderr, /unknown command/)
 
   const rootPackageJson = require(path.join(repoRoot, 'package.json'))
-  assert.strictEqual(rootPackageJson.scripts.paste, 'node ./scripts/mkdp-studio.js')
-  assert.strictEqual(rootPackageJson.scripts.studio, 'npm run paste --')
+  assert.strictEqual(rootPackageJson.scripts.paste, 'node ./scripts/mkdp-paste.js')
 
   const version = runNode([binPath, '--version'])
   assert.strictEqual(version.status, 0, version.stderr)
@@ -127,7 +124,7 @@ function testBuildCliPackageCopiesAssets() {
     ensureFile(path.join(distDir, 'web', 'index.html'), '<html>index</html>')
     ensureFile(path.join(distDir, 'web', '404.html'), '<html>missing</html>')
     ensureFile(path.join(distDir, 'static', 'page.css'), 'body {}')
-    ensureFile(path.join(tempRoot, 'studio', 'dist', 'index.html'), '<html>studio</html>')
+    ensureFile(path.join(tempRoot, 'preview', 'dist', 'index.html'), '<html>preview</html>')
     ensureFile(path.join(packageRoot, 'assets', 'web', 'old.html'), 'old')
     ensureFile(path.join(packageRoot, 'assets', 'static', 'old.css'), 'old')
 
@@ -143,8 +140,8 @@ function testBuildCliPackageCopiesAssets() {
     )
     assert.strictEqual(fs.existsSync(path.join(packageRoot, 'assets', 'web', 'old.html')), false)
     assert.strictEqual(
-      fs.readFileSync(path.join(packageRoot, 'assets', 'studio', 'index.html'), 'utf8'),
-      '<html>studio</html>'
+      fs.readFileSync(path.join(packageRoot, 'assets', 'preview', 'index.html'), 'utf8'),
+      '<html>preview</html>'
     )
     assert.strictEqual(fs.existsSync(path.join(packageRoot, 'assets', 'static', 'old.css')), false)
   } finally {
