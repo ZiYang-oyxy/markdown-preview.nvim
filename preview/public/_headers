@@ -5,10 +5,10 @@
   X-Content-Type-Options: nosniff
 
 /
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; frame-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src data:; connect-src 'none'; frame-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
 
 /index.html
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; frame-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src data:; connect-src 'none'; frame-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
 
 /preview-frame.html
   Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'
