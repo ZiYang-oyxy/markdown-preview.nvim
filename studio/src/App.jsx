@@ -20,13 +20,32 @@ import {
   updateDocument,
 } from './storage.js'
 
-function loadTheme() {
+function loadPreferences() {
   try {
-    const preferences = JSON.parse(localStorage.getItem(PREFERENCES_KEY))
-    return preferences?.theme === 'dark' ? 'dark' : 'light'
+    return JSON.parse(localStorage.getItem(PREFERENCES_KEY)) || {}
   } catch {
-    return 'light'
+    return {}
   }
+}
+
+function loadTheme() {
+  return loadPreferences().theme === 'dark' ? 'dark' : 'light'
+}
+
+function loadRailsCollapsed() {
+  const rails = loadPreferences().rails
+  return {
+    documents: rails?.documents === true,
+    toc: rails?.toc === true,
+  }
+}
+
+function savePreference(key, value) {
+  const preferences = loadPreferences()
+  localStorage.setItem(
+    PREFERENCES_KEY,
+    JSON.stringify({ ...preferences, version: 1, [key]: value }),
+  )
 }
 
 function loadWorkspace() {
@@ -61,6 +80,7 @@ function EmptyState({ onCreate, onImport }) {
 export default function App() {
   const [workspace, setWorkspace] = useState(loadWorkspace)
   const [theme, setTheme] = useState(loadTheme)
+  const [railsCollapsed, setRailsCollapsed] = useState(loadRailsCollapsed)
   const [toc, setToc] = useState(null)
   const [pasteOpen, setPasteOpen] = useState(false)
   const [sourceOpen, setSourceOpen] = useState(false)
@@ -155,7 +175,15 @@ export default function App() {
   function toggleTheme() {
     const next = theme === 'light' ? 'dark' : 'light'
     setTheme(next)
-    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ version: 1, theme: next }))
+    savePreference('theme', next)
+  }
+
+  function toggleRail(key) {
+    setRailsCollapsed((current) => {
+      const next = { ...current, [key]: !current[key] }
+      savePreference('rails', next)
+      return next
+    })
   }
 
   function scrollToHeading(id) {
@@ -191,12 +219,18 @@ export default function App() {
         theme={theme}
       />
 
-      <div className="workspace">
+      <div
+        className="workspace"
+        data-rail-documents={railsCollapsed.documents ? 'collapsed' : undefined}
+        data-rail-toc={railsCollapsed.toc ? 'collapsed' : undefined}
+      >
         <DocumentRail
           activeId={workspace.index.activeDocumentId}
+          collapsed={railsCollapsed.documents}
           documents={workspace.index.documents}
           onCreate={() => setPasteOpen(true)}
           onSelect={selectDocument}
+          onToggleCollapse={() => toggleRail('documents')}
         />
 
         <main className="reading-workspace" id="main-content" tabIndex="-1">
@@ -225,7 +259,12 @@ export default function App() {
           )}
         </main>
 
-        <TocRail onSelect={scrollToHeading} toc={active ? toc : []} />
+        <TocRail
+          collapsed={railsCollapsed.toc}
+          onSelect={scrollToHeading}
+          onToggleCollapse={() => toggleRail('toc')}
+          toc={active ? toc : []}
+        />
       </div>
 
       <button className="mobile-create" onClick={() => setPasteOpen(true)} type="button" aria-label="新建文档">＋</button>

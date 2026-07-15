@@ -36,18 +36,31 @@ export function DocumentList({ activeId, documents, onSelect }) {
   )
 }
 
-export default function DocumentRail({ activeId, documents, onCreate, onSelect }) {
+export default function DocumentRail({ activeId, collapsed, documents, onCreate, onSelect, onToggleCollapse }) {
   return (
-    <aside className="document-rail" aria-label="临时文档">
-      <div className="rail-heading">
-        <div>
-          <p className="eyebrow">本地工作区</p>
-          <h2>临时文档</h2>
-        </div>
-        <button className="small-icon-button" onClick={onCreate} type="button" aria-label="粘贴新文档">＋</button>
-      </div>
-      <DocumentList activeId={activeId} documents={documents} onSelect={onSelect} />
-      <p className="local-note"><span aria-hidden="true">●</span> 仅保存在此浏览器</p>
+    <aside className="document-rail" aria-label="临时文档" data-collapsed={collapsed ? 'true' : undefined}>
+      <button
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? '展开临时文档栏' : '收起临时文档栏'}
+        className="rail-collapse-toggle"
+        onClick={onToggleCollapse}
+        type="button"
+      >
+        {collapsed ? '›' : '‹'}
+      </button>
+      {collapsed ? null : (
+        <>
+          <div className="rail-heading">
+            <div>
+              <p className="eyebrow">本地工作区</p>
+              <h2>临时文档</h2>
+            </div>
+            <button className="small-icon-button" onClick={onCreate} type="button" aria-label="粘贴新文档">＋</button>
+          </div>
+          <DocumentList activeId={activeId} documents={documents} onSelect={onSelect} />
+          <p className="local-note"><span aria-hidden="true">●</span> 仅保存在此浏览器</p>
+        </>
+      )}
     </aside>
   )
 }

@@ -233,9 +233,20 @@ button:disabled {
 }
 
 .workspace {
+  --rail-documents-width: 260px;
+  --rail-toc-width: 220px;
   display: grid;
   min-height: calc(100vh - 68px);
-  grid-template-columns: 260px minmax(0, 1fr) 220px;
+  grid-template-columns: var(--rail-documents-width) minmax(0, 1fr) var(--rail-toc-width);
+  transition: grid-template-columns 0.22s ease;
+}
+
+.workspace[data-rail-documents="collapsed"] {
+  --rail-documents-width: 40px;
+}
+
+.workspace[data-rail-toc="collapsed"] {
+  --rail-toc-width: 40px;
 }
 
 .document-rail,
@@ -255,7 +266,42 @@ button:disabled {
 }
 
 .toc-rail {
+  display: flex;
   border-left: 1px solid var(--rule);
+  flex-direction: column;
+}
+
+.document-rail[data-collapsed="true"],
+.toc-rail[data-collapsed="true"] {
+  padding: 30px 0;
+  overflow: visible;
+  align-items: center;
+}
+
+.rail-collapse-toggle {
+  position: absolute;
+  top: 30px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.document-rail .rail-collapse-toggle {
+  right: 14px;
+}
+
+.toc-rail .rail-collapse-toggle {
+  left: 14px;
+}
+
+.document-rail[data-collapsed="true"] .rail-collapse-toggle,
+.toc-rail[data-collapsed="true"] .rail-collapse-toggle {
+  position: static;
 }
 
 .rail-heading {
