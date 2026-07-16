@@ -537,7 +537,7 @@ button:disabled {
   justify-content: space-between;
   gap: 20px;
   margin: 0 auto 14px;
-  width: min(100%, 960px);
+  width: min(100%, 1200px);
 }
 
 .toolbar-title {
@@ -568,7 +568,7 @@ button:disabled {
 
 .preview-container {
   position: relative;
-  width: min(100%, 960px);
+  width: min(100%, 1200px);
   margin: 0 auto;
   overflow: hidden;
   border: 1px solid var(--rule);
