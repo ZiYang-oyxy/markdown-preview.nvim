@@ -48,6 +48,12 @@ describe('desktop page-index side rails', () => {
     expect(stylesSource).toMatch(
       /\.document-rail\[data-collapsed="true"\][\s\S]*border-color:\s*transparent/,
     )
+    expect(stylesSource).toMatch(
+      /\.rail-restore-handle--documents:hover\s*{[^}]*transform:\s*translateX\(-1px\)/s,
+    )
+    expect(stylesSource).toMatch(
+      /\.rail-restore-handle--toc:hover\s*{[^}]*transform:\s*translateX\(1px\)/s,
+    )
   })
 
   it('keeps handles desktop-only and respects reduced motion', () => {
