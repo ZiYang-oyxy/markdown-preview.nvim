@@ -238,7 +238,7 @@ test('theme, TOC, and cross-tab storage notification are wired', async ({ page }
   await page.evaluate(() => {
     window.dispatchEvent(new StorageEvent('storage', { key: 'mkdp-preview:index:v1' }))
   })
-  await expect(page.getByRole('status')).toContainText('其他标签页')
+  await expect(page.locator('.sync-status')).toContainText('其他标签页')
 })
 
 test('a slower stale render cannot replace the newest document', async ({ page }) => {
