@@ -110,7 +110,7 @@ button:disabled {
 .file-drop-overlay {
   position: fixed;
   z-index: 80;
-  inset: 12px;
+  inset: 0;
   display: grid;
   place-content: center;
   justify-items: center;
@@ -119,7 +119,7 @@ button:disabled {
   color: var(--ink);
   background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: blur(10px);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .file-drop-overlay > span {

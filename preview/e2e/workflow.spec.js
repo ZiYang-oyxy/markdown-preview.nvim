@@ -139,6 +139,66 @@ test('dragging one .md file onto the page creates and renders a local document',
     .getByRole('button', { name: /拖入成功/ })).toBeVisible()
 })
 
+test('the active drop overlay intercepts the preview iframe', async ({ page }) => {
+  await pasteDocument(page, '# Iframe drop target')
+
+  await page.locator('.preview-frame').evaluate((iframe) => {
+    const transfer = new DataTransfer()
+    transfer.items.add(new File(['# Overlay'], 'overlay.md', { type: 'text/markdown' }))
+    iframe.dispatchEvent(new DragEvent('dragenter', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: transfer,
+    }))
+  })
+
+  const overlay = page.getByRole('status', { name: '松开以预览 Markdown' })
+  await expect(overlay).toBeVisible()
+  await expect(overlay).toHaveCSS('pointer-events', 'auto')
+  await expect(overlay).toHaveCSS('inset', '0px')
+  await expect(overlay).toHaveCSS('z-index', '80')
+
+  const overlayOwnsPreviewCenter = await page.evaluate(() => {
+    const iframe = document.querySelector('.preview-frame')
+    const bounds = iframe.getBoundingClientRect()
+    return Boolean(document.elementFromPoint(
+      bounds.left + bounds.width / 2,
+      bounds.top + Math.min(bounds.height / 2, 200),
+    )?.closest('.file-drop-overlay'))
+  })
+  expect(overlayOwnsPreviewCenter).toBe(true)
+})
+
+test('the latest dropped file wins when an earlier read finishes later', async ({ page }) => {
+  await page.evaluate(() => {
+    const originalArrayBuffer = Blob.prototype.arrayBuffer
+    Blob.prototype.arrayBuffer = function delayedArrayBuffer() {
+      const delay = this.name === 'slow.md' ? 150 : 0
+      return new Promise((resolve, reject) => {
+        setTimeout(() => originalArrayBuffer.call(this).then(resolve, reject), delay)
+      })
+    }
+
+    const drop = (name, markdown) => {
+      const transfer = new DataTransfer()
+      transfer.items.add(new File([markdown], name, { type: 'text/markdown' }))
+      window.dispatchEvent(new DragEvent('drop', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: transfer,
+      }))
+    }
+
+    drop('slow.md', '# 较早的慢文件')
+    drop('latest.md', '# 最后拖入的文件')
+  })
+
+  const preview = page.frameLocator('.preview-frame')
+  await page.waitForTimeout(250)
+  await expect(preview.getByRole('heading', { name: '最后拖入的文件' })).toBeVisible()
+  await expect(preview.getByRole('heading', { name: '较早的慢文件' })).toHaveCount(0)
+})
+
 test('invalid Markdown drops keep the active document unchanged', async ({ page }) => {
   await pasteDocument(page, '# 保留原文\n\n不能被非法拖入覆盖。')
 

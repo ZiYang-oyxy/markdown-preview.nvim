@@ -94,6 +94,7 @@ export default function App() {
   const fileInputRef = useRef(null)
   const previewChannelRef = useRef(null)
   const dragDepthRef = useRef(0)
+  const fileRequestRef = useRef(0)
 
   const refresh = useCallback((notify = false) => {
     setWorkspace(loadWorkspace())
@@ -129,13 +130,15 @@ export default function App() {
     }
   }, [refresh])
 
-  const createFromFile = useCallback(async (file) => {
+  const createFromFile = useCallback(async (file, requestId = ++fileRequestRef.current) => {
     try {
       const markdown = await readMarkdownFile(file)
+      if (requestId !== fileRequestRef.current) return ''
       const createError = create(markdown)
       if (!createError) setPasteOpen(false)
       return createError
     } catch (error) {
+      if (requestId !== fileRequestRef.current) return ''
       setAlert(error.message)
       return error.message
     }
@@ -165,11 +168,12 @@ export default function App() {
       event.preventDefault()
       dragDepthRef.current = 0
       setDropActive(false)
+      const requestId = ++fileRequestRef.current
       try {
         const file = getDroppedMarkdownFile(event.dataTransfer.files)
-        await createFromFile(file)
+        await createFromFile(file, requestId)
       } catch (error) {
-        setAlert(error.message)
+        if (requestId === fileRequestRef.current) setAlert(error.message)
       }
     }
 
