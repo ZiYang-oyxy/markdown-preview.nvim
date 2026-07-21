@@ -104,6 +104,71 @@ test('file import rejects invalid UTF-8 and accepts Markdown text', async ({ pag
   await expect(page.frameLocator('.preview-frame').getByRole('heading', { name: '导入成功' })).toBeVisible()
 })
 
+test('dragging one .md file onto the page creates and renders a local document', async ({ page }) => {
+  await page.evaluate(() => {
+    const transfer = new DataTransfer()
+    transfer.items.add(new File(
+      ['# 拖入成功\n\n## 拖入章节\n\n文件正文'],
+      'dragged.md',
+      { type: 'text/markdown' },
+    ))
+    window.__markdownDropTransfer = transfer
+    window.dispatchEvent(new DragEvent('dragenter', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: transfer,
+    }))
+  })
+
+  await expect(page.getByRole('status', { name: '松开以预览 Markdown' })).toBeVisible()
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new DragEvent('drop', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: window.__markdownDropTransfer,
+    }))
+    delete window.__markdownDropTransfer
+  })
+
+  await expect(page.getByRole('status', { name: '松开以预览 Markdown' })).toHaveCount(0)
+  await expect(page.frameLocator('.preview-frame').getByRole('heading', { name: '拖入成功' })).toBeVisible()
+  await expect(page.frameLocator('.preview-frame').getByText('文件正文')).toBeVisible()
+  await expect(page.getByRole('button', { name: '跳转到拖入章节' })).toBeVisible()
+  await expect(page.getByRole('complementary', { name: '临时文档' })
+    .getByRole('button', { name: /拖入成功/ })).toBeVisible()
+})
+
+test('invalid Markdown drops keep the active document unchanged', async ({ page }) => {
+  await pasteDocument(page, '# 保留原文\n\n不能被非法拖入覆盖。')
+
+  await page.evaluate(() => {
+    const transfer = new DataTransfer()
+    transfer.items.add(new File(['# Wrong'], 'notes.markdown', { type: 'text/markdown' }))
+    window.dispatchEvent(new DragEvent('drop', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: transfer,
+    }))
+  })
+  await expect(page.getByRole('alert')).toContainText('仅支持 .md 文件。')
+  await expect(page.frameLocator('.preview-frame').getByRole('heading', { name: '保留原文' })).toBeVisible()
+
+  await page.getByRole('button', { name: '关闭提示' }).click()
+  await page.evaluate(() => {
+    const transfer = new DataTransfer()
+    transfer.items.add(new File(['# A'], 'a.md', { type: 'text/markdown' }))
+    transfer.items.add(new File(['# B'], 'b.md', { type: 'text/markdown' }))
+    window.dispatchEvent(new DragEvent('drop', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: transfer,
+    }))
+  })
+  await expect(page.getByRole('alert')).toContainText('一次只能拖入一个 .md 文件。')
+  await expect(page.frameLocator('.preview-frame').getByRole('heading', { name: '保留原文' })).toBeVisible()
+})
+
 test('theme, TOC, and cross-tab storage notification are wired', async ({ page }) => {
   await pasteDocument(page, '# 标题\n\n## 章节一\n\n内容')
   await expect(page.getByRole('button', { name: '跳转到章节一' })).toBeVisible()

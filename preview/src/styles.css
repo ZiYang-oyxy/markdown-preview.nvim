@@ -107,6 +107,35 @@ button:disabled {
   --shadow: 0 22px 60px rgb(0 0 0 / 24%);
 }
 
+.file-drop-overlay {
+  position: fixed;
+  z-index: 80;
+  inset: 12px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  border: 2px dashed var(--blue);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.file-drop-overlay > span {
+  color: var(--blue);
+  font-size: 42px;
+  font-weight: 800;
+}
+
+.file-drop-overlay > strong {
+  font-size: 20px;
+}
+
+.file-drop-overlay > small {
+  color: var(--muted);
+}
+
 .app-header {
   position: sticky;
   z-index: 20;

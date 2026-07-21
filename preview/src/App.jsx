@@ -9,7 +9,7 @@ import Sheet from './components/Sheet.jsx'
 import SourceDialog from './components/SourceDialog.jsx'
 import TocRail, { TocList } from './components/TocRail.jsx'
 import { buildExportDocument, downloadHtml, exportFilename } from './export.js'
-import { readMarkdownFile } from './markdown-file.js'
+import { getDroppedMarkdownFile, readMarkdownFile } from './markdown-file.js'
 import {
   PREFERENCES_KEY,
   createDocument,
@@ -90,8 +90,10 @@ export default function App() {
   const [alert, setAlert] = useState('')
   const [status, setStatus] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [dropActive, setDropActive] = useState(false)
   const fileInputRef = useRef(null)
   const previewChannelRef = useRef(null)
+  const dragDepthRef = useRef(0)
 
   const refresh = useCallback((notify = false) => {
     setWorkspace(loadWorkspace())
@@ -114,7 +116,7 @@ export default function App() {
   }, [])
   const handleToc = useCallback((items) => setToc(items), [])
 
-  function create(markdown) {
+  const create = useCallback((markdown) => {
     try {
       createDocument(markdown)
       setAlert('')
@@ -125,7 +127,63 @@ export default function App() {
       setAlert(error.message)
       return error.message
     }
-  }
+  }, [refresh])
+
+  const createFromFile = useCallback(async (file) => {
+    try {
+      const markdown = await readMarkdownFile(file)
+      const createError = create(markdown)
+      if (!createError) setPasteOpen(false)
+      return createError
+    } catch (error) {
+      setAlert(error.message)
+      return error.message
+    }
+  }, [create])
+
+  useEffect(() => {
+    const hasFiles = (event) => Array.from(event.dataTransfer?.types ?? []).includes('Files')
+
+    const onDragEnter = (event) => {
+      if (!hasFiles(event)) return
+      event.preventDefault()
+      dragDepthRef.current += 1
+      setDropActive(true)
+    }
+    const onDragOver = (event) => {
+      if (!hasFiles(event)) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'copy'
+    }
+    const onDragLeave = (event) => {
+      if (!hasFiles(event)) return
+      dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
+      if (dragDepthRef.current === 0) setDropActive(false)
+    }
+    const onDrop = async (event) => {
+      if (!hasFiles(event)) return
+      event.preventDefault()
+      dragDepthRef.current = 0
+      setDropActive(false)
+      try {
+        const file = getDroppedMarkdownFile(event.dataTransfer.files)
+        await createFromFile(file)
+      } catch (error) {
+        setAlert(error.message)
+      }
+    }
+
+    window.addEventListener('dragenter', onDragEnter)
+    window.addEventListener('dragover', onDragOver)
+    window.addEventListener('dragleave', onDragLeave)
+    window.addEventListener('drop', onDrop)
+    return () => {
+      window.removeEventListener('dragenter', onDragEnter)
+      window.removeEventListener('dragover', onDragOver)
+      window.removeEventListener('dragleave', onDragLeave)
+      window.removeEventListener('drop', onDrop)
+    }
+  }, [createFromFile])
 
   function selectDocument(id) {
     setActiveDocument(id)
@@ -163,13 +221,7 @@ export default function App() {
     const [file] = event.target.files
     event.target.value = ''
     if (!file) return
-    try {
-      const markdown = await readMarkdownFile(file)
-      const createError = create(markdown)
-      if (!createError) setPasteOpen(false)
-    } catch (error) {
-      setAlert(error.message)
-    }
+    await createFromFile(file)
   }
 
   function toggleTheme() {
@@ -210,6 +262,13 @@ export default function App() {
   return (
     <div className="preview-shell" data-theme={theme}>
       <a className="skip-link" href="#main-content">跳到正文</a>
+      {dropActive ? (
+        <div className="file-drop-overlay" role="status" aria-label="松开以预览 Markdown">
+          <span aria-hidden="true">M↓</span>
+          <strong>松开以预览 Markdown</strong>
+          <small>仅支持单个 .md 文件</small>
+        </div>
+      ) : null}
       <AppHeader
         hasDocument={Boolean(active)}
         onCreate={() => setPasteOpen(true)}
