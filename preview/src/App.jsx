@@ -9,6 +9,7 @@ import Sheet from './components/Sheet.jsx'
 import SourceDialog from './components/SourceDialog.jsx'
 import TocRail, { TocList } from './components/TocRail.jsx'
 import { buildExportDocument, downloadHtml, exportFilename } from './export.js'
+import { readMarkdownFile } from './markdown-file.js'
 import {
   PREFERENCES_KEY,
   createDocument,
@@ -163,12 +164,11 @@ export default function App() {
     event.target.value = ''
     if (!file) return
     try {
-      if (file.size > 1024 * 1024) throw new Error('单份文档不能超过 1 MiB。')
-      const markdown = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer())
+      const markdown = await readMarkdownFile(file)
       const createError = create(markdown)
       if (!createError) setPasteOpen(false)
     } catch (error) {
-      setAlert(error instanceof TypeError ? '文件不是有效的 UTF-8 文本。' : error.message)
+      setAlert(error.message)
     }
   }
 
