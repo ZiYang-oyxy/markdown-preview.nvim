@@ -3,13 +3,14 @@
 ## Goal
 
 Remove confirmed local-environment and organization-trace data from selected Git
-history while preserving project behavior, current `master` content, unrelated
-branches, tags, and known test/documentation fixtures.
+history and the current affected documentation line while preserving project
+behavior, unrelated current content, branches, tags, and reviewed fixtures.
 
 ## Scope
 
 - Rewrite the affected history on `master` and one affected local backup branch.
 - Replace only confirmed sensitive values with neutral placeholders.
+- Sanitize the same confirmed value in the current affected documentation file.
 - Keep test-only token fixtures and documented placeholder paths unchanged.
 - Do not publish the local backup branch.
 - Do not modify any untracked working-tree file.
@@ -24,9 +25,10 @@ refs and is permission-restricted. Its location and restoration command are
 reported after validation, but it is never added as a Git ref because retained
 refs would keep the sensitive commits visible to all-ref scans.
 
-Perform the rewrite in a disposable mirror under `/tmp`. The source repository
-remains unchanged until the rewritten refs pass validation. Replacement input is
-generated as a permission-restricted temporary file and removed after use.
+Perform the rewrite in a permission-restricted private bare clone containing no
+tags and only the two affected heads. The source refs remain unchanged until the
+rewritten heads pass validation. Replacement input is generated as a private
+temporary file and removed immediately after use.
 
 ## Rewrite Strategy
 
@@ -44,7 +46,7 @@ the backup branch because the branch may contain unrelated work worth retaining.
 The rewritten mirror must pass all of the following checks before local refs are
 updated:
 
-- The current `master` tree hash is identical to the pre-rewrite tree hash.
+- The current `master` endpoint differs only in the reviewed documentation file.
 - The rewritten branches contain no `company-trace` findings.
 - No confirmed local absolute path remains in the affected historical location.
 - The only remaining findings match the four reviewed fixtures: two test-token
@@ -52,17 +54,20 @@ updated:
 - No tag or unrelated branch SHA changes.
 - Commit ancestry and branch tips remain connected and readable.
 
-After importing the rewritten local refs, scan those refs explicitly and verify
-that tracked and staged working-tree diffs remain empty. The old remote-tracking
-ref remains reachable until remote publication; run the full-ref scan only after
-the force-push is complete and a fetch confirms the new remote tip.
+After importing the rewritten objects, compare the old and new endpoint trees
+before updating refs. After the atomic ref update, synchronize only the reviewed
+documentation file from the new `HEAD`, then verify that tracked and staged
+working-tree diffs are empty. The old remote-tracking ref remains reachable until
+remote publication; run the full-ref scan only after the force-push is complete
+and a fetch confirms the new remote tip.
 
 ## Ref Update And Publication
 
 Update local refs with compare-and-swap `git update-ref` operations using their
-recorded old object IDs. Do not use `git reset --hard`; the current `master` tree
-is unchanged, so the index and working tree remain valid. Do not update a ref if
-its old object ID changed during the rewrite window.
+recorded old object IDs. Import verified objects without creating refs before the
+transaction. Do not use `git reset --hard`; after the transaction, restore only
+the reviewed documentation path from the sanitized `HEAD`. Do not update a ref
+if its old object ID changed during the rewrite window.
 
 Remote publication is intentionally separate. Codex will provide an exact
 `git push --force-with-lease=<ref>:<old-object-id>` command after local validation,

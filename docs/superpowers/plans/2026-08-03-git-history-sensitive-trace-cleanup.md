@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Remove confirmed organization and local-environment traces from the affected Git history without changing the current `master` tree or retaining sensitive values in tracked artifacts.
+**Goal:** Remove confirmed organization and local-environment traces from the affected Git history and current documentation while changing no unrelated current content.
 
 **Architecture:** Create a permission-restricted rollback bundle and a two-branch bare clone outside the repository. Extract only reviewed findings into an ephemeral `git filter-repo` replacement stream, validate the rewritten object graph, atomically update local refs, and leave remote force-push to the repository owner.
 
@@ -13,6 +13,7 @@
 - Never print or add a confirmed sensitive value to a tracked file, commit message, or long-lived Git ref.
 - Rewrite only `master` and the single local branch containing commit `b59eb46434057163edf366c4e6267903c16415a6`.
 - Preserve the two reviewed test-token findings and two reviewed README placeholder-path findings.
+- Change current `master` content only at `preview/acceptance/README.md`, replacing the confirmed sensitive value with a neutral placeholder.
 - Preserve every unrelated local branch, remote-tracking ref, tag, linked worktree, and untracked file.
 - Never run `git reset --hard` or push the local backup branch.
 - Codex must not force-push `master`; it prints a lease-protected command for the repository owner.
@@ -131,12 +132,12 @@ Expected: all paths and both affected refs resolve without printing sensitive fi
 Run:
 
 ```bash
-git clone --bare --no-local --single-branch --branch master "$REPO_ROOT" "$REWRITE_GIT"
+git clone --bare --no-local --no-tags --single-branch --branch master "$REPO_ROOT" "$REWRITE_GIT"
 git -C "$REWRITE_GIT" fetch "$REPO_ROOT" "$BACKUP_REF:$BACKUP_REF"
-git -C "$REWRITE_GIT" for-each-ref --format='%(refname)' refs/heads
+git -C "$REWRITE_GIT" for-each-ref --format='%(refname)' refs/heads refs/tags
 ```
 
-Expected: exactly two local heads are present; no unrelated branch or tag is imported.
+Expected: exactly two local heads and no tag are present; no unrelated branch is imported.
 
 - [ ] **Step 3: Generate the unredacted report privately**
 
@@ -225,7 +226,7 @@ test -s "$RUN_ROOT/rewrite.git/filter-repo/commit-map"
 
 Expected: `git fsck` exits `0`; the commit map is non-empty.
 
-### Task 4: Validate The Rewritten Mirror
+### Task 4: Import And Validate The Rewritten Mirror
 
 **Files:**
 - Create privately: `$RUN_ROOT/rewritten-redacted.json`
@@ -233,21 +234,44 @@ Expected: `git fsck` exits `0`; the commit map is non-empty.
 
 **Interfaces:**
 - Consumes: rewritten refs from Task 3 and the source repository's gitleaks configuration
-- Produces: exact evidence that only the four reviewed fixtures remain
+- Produces: imported rewritten objects and exact evidence that only the reviewed current path changes and four reviewed fixtures remain
 
-- [ ] **Step 1: Prove the current `master` tree is unchanged**
+- [ ] **Step 1: Import rewritten objects without creating or updating refs**
 
 Run in Bash:
 
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 RUN_ROOT="$(readlink "${XDG_CONFIG_HOME:-$HOME/.config}/secret-guard/history-backups/current-markdown-preview-cleanup")"
-test "$(git -C "$REPO_ROOT" rev-parse refs/heads/master^{tree})" = "$(git -C "$RUN_ROOT/rewrite.git" rev-parse refs/heads/master^{tree})"
+REWRITE_GIT="$RUN_ROOT/rewrite.git"
+MASTER_REF="refs/heads/master"
+BACKUP_REF="$(git -C "$REWRITE_GIT" for-each-ref --format='%(refname)' refs/heads | awk '$0 != "refs/heads/master"')"
+NEW_MASTER="$(git -C "$REWRITE_GIT" rev-parse "$MASTER_REF")"
+NEW_BACKUP="$(git -C "$REWRITE_GIT" rev-parse "$BACKUP_REF")"
+git fetch-pack --no-progress "$REWRITE_GIT" "$MASTER_REF" "$BACKUP_REF"
+git cat-file -e "$NEW_MASTER^{commit}"
+git cat-file -e "$NEW_BACKUP^{commit}"
 ```
 
-Expected: comparison exits `0`; no current project file content changes.
+Expected: both rewritten commits exist in the source object database, while all
+source refs remain at their Task 1 baseline OIDs.
 
-- [ ] **Step 2: Scan all refs in the isolated two-head repository**
+- [ ] **Step 2: Prove the exact current endpoint delta**
+
+Run in Bash:
+
+```bash
+RUN_ROOT="$(readlink "${XDG_CONFIG_HOME:-$HOME/.config}/secret-guard/history-backups/current-markdown-preview-cleanup")"
+BUNDLE="$RUN_ROOT/pre-rewrite.bundle"
+OLD_MASTER="$(git bundle list-heads "$BUNDLE" refs/heads/master | awk '{print $1}')"
+NEW_MASTER="$(git -C "$RUN_ROOT/rewrite.git" rev-parse refs/heads/master)"
+test "$(git diff --name-status "$OLD_MASTER" "$NEW_MASTER")" = $'M\tpreview/acceptance/README.md'
+```
+
+Expected: the endpoint tree changes exactly one existing documentation file and
+no other current content.
+
+- [ ] **Step 3: Scan all refs in the isolated two-head repository**
 
 Run in Bash:
 
@@ -259,7 +283,7 @@ gitleaks git "$RUN_ROOT/rewrite.git" --config "$REPO_ROOT/.git/secret-guard/gitl
 
 Expected: scan completes and writes a fully redacted report.
 
-- [ ] **Step 3: Assert the exact remaining finding set**
+- [ ] **Step 4: Assert the exact remaining finding set**
 
 Run:
 
@@ -275,7 +299,7 @@ jq -e '
 
 Expected: `true` and exit `0`.
 
-- [ ] **Step 4: Verify no unrelated source ref changed**
+- [ ] **Step 5: Verify no unrelated source ref changed**
 
 Run:
 
@@ -287,15 +311,16 @@ git status --porcelain=v1
 Expected: source refs still match Task 1 evidence and status matches the
 untracked baseline recorded in Task 1.
 
-### Task 5: Atomically Import The Rewritten Local Refs
+### Task 5: Atomically Update The Rewritten Local Refs
 
 **Files:**
 - Modify: source repository `refs/heads/master`
 - Modify: the single affected local backup ref
-- Preserve: all tracked, staged, untracked, remote-tracking, tag, and linked-worktree state
+- Modify in worktree: `preview/acceptance/README.md` only
+- Preserve: all other tracked, staged, untracked, remote-tracking, tag, and linked-worktree state
 
 **Interfaces:**
-- Consumes: verified rewritten refs, rollback bundle, and current source refs
+- Consumes: verified rewritten objects, rollback bundle, and current source refs
 - Produces: atomically updated local refs with the old remote-tracking ref intentionally untouched
 
 - [ ] **Step 1: Derive old and new object IDs from authoritative stores**
@@ -331,19 +356,20 @@ printf 'start\nupdate %s %s %s\nupdate %s %s %s\nprepare\ncommit\n' \
 
 Expected: transaction reports `start: ok`, `prepare: ok`, and `commit: ok`.
 
-- [ ] **Step 3: Verify working-tree preservation**
+- [ ] **Step 3: Synchronize only the approved sanitized current file**
 
 Run:
 
 ```bash
+git restore --source=HEAD --staged --worktree -- preview/acceptance/README.md
 git diff --exit-code
 git diff --cached --exit-code
 git status --porcelain=v1
 ```
 
-Expected: tracked and staged diffs are empty and all untracked baseline entries
-remain untouched. Branch status may show divergence from `origin/master` until
-publication.
+Expected: the approved file matches sanitized `HEAD`, tracked and staged diffs
+are empty, and all untracked baseline entries remain untouched. Branch status
+may show divergence from `origin/master` until publication.
 
 - [ ] **Step 4: Scan each rewritten local branch explicitly**
 
@@ -461,6 +487,7 @@ printf 'start\nupdate %s %s %s\nupdate %s %s %s\nprepare\ncommit\n' \
   "$MASTER_REF" "$OLD_MASTER" "$CURRENT_MASTER" \
   "$BACKUP_REF" "$OLD_BACKUP" "$CURRENT_BACKUP" |
   git update-ref --stdin
+git restore --source=HEAD --staged --worktree -- preview/acceptance/README.md
 ```
 
 Do not run the rollback after remote publication without coordinating a second
