@@ -133,7 +133,7 @@ Run:
 
 ```bash
 git clone --bare --no-local --no-tags --single-branch --branch master "$REPO_ROOT" "$REWRITE_GIT"
-git -C "$REWRITE_GIT" fetch "$REPO_ROOT" "$BACKUP_REF:$BACKUP_REF"
+git -C "$REWRITE_GIT" fetch --no-tags "$REPO_ROOT" "$BACKUP_REF:$BACKUP_REF"
 git -C "$REWRITE_GIT" for-each-ref --format='%(refname)' refs/heads refs/tags
 ```
 
