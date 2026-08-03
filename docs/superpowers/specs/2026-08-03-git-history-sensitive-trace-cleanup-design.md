@@ -12,7 +12,7 @@ branches, tags, and known test/documentation fixtures.
 - Replace only confirmed sensitive values with neutral placeholders.
 - Keep test-only token fixtures and documented placeholder paths unchanged.
 - Do not publish the local backup branch.
-- Do not modify the existing untracked working-tree file.
+- Do not modify any untracked working-tree file.
 - Do not store original sensitive values in tracked files, commit messages, logs,
   or long-lived Git refs.
 
@@ -52,8 +52,10 @@ updated:
 - No tag or unrelated branch SHA changes.
 - Commit ancestry and branch tips remain connected and readable.
 
-After importing the rewritten refs, run the same full-ref scan in the source
-repository and verify that tracked and staged working-tree diffs remain empty.
+After importing the rewritten local refs, scan those refs explicitly and verify
+that tracked and staged working-tree diffs remain empty. The old remote-tracking
+ref remains reachable until remote publication; run the full-ref scan only after
+the force-push is complete and a fetch confirms the new remote tip.
 
 ## Ref Update And Publication
 
